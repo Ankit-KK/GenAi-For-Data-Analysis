@@ -1,9 +1,7 @@
-
 pandas
 numpy
 matplotlib
 seaborn
-io
-traceback
+streamlit
 openai
 fpdf
