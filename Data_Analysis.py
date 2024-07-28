@@ -127,7 +127,7 @@ def get_binary_file_downloader_html(bin_file, file_label='File'):
     return href
 
 def main():
-    st.title("Exploratory Data Analysis (EDA) Code Generator")
+    st.title("ExploraGen")
 
     uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
     
