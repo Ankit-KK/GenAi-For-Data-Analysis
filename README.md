@@ -1,42 +1,64 @@
-# ExploraGen
+# ExploraGen: Automated Data Analysis Script Generation Using LLaMA 3.1 8B Instruct
 
 ## Overview
-ExploraGen is an interactive Streamlit app designed to generate comprehensive Exploratory Data Analysis (EDA) code using OpenAI's API. This tool is perfect for data scientists and analysts looking to quickly explore and understand datasets.
+
+ExploraGen leverages the LLaMA 3.1 8B Instruct model to automate the generation of Python scripts for comprehensive data analysis tasks. The script covers detailed exploratory data analysis (EDA), meticulous data preprocessing, thorough feature selection, comprehensive model selection, rigorous model training and evaluation, and in-depth model comparison and selection. The generated script is structured, modular, and easy to follow, with detailed explanations, visualizations, additional guidelines for error handling, and reproducibility.
 
 ## Features
-- **Streamlit Interface**: Simple and intuitive interface for uploading datasets and receiving EDA code.
-- **OpenAI Integration**: Generates detailed Python code for data exploration, including data overview, descriptive statistics, and visualizations.
-- **Custom Prompts**: Tailored prompts to ensure thorough analysis and actionable insights.
-- **Code Download**: Option to download the generated Python code for further analysis and use.
 
-## Installation
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/ankit-kk/ExploraGen.git
-   ```
-2. Navigate to the project directory:
-   ```bash
-   cd ExploraGen
-   ```
-3. Install the required dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+- **Detailed Exploratory Data Analysis (EDA)**: Generate EDA code with visualizations and statistical summaries.
+- **Data Preprocessing**: Clean, transform, and prepare data for modeling, including handling missing values, encoding categorical variables, and scaling features.
+- **Feature Selection**: Select the most relevant features using various techniques such as correlation analysis, feature importance from models, and recursive feature elimination.
+- **Model Selection and Training**: Compare multiple machine learning models, train them, and evaluate their performance using appropriate metrics.
+- **Model Evaluation and Comparison**: Compare models based on performance metrics and select the best model.
+- **Documentation and Reproducibility**: Generate detailed documentation and Jupyter Notebooks to ensure the process is reproducible and well-documented.
+
+## Tools and Libraries
+
+- **LLaMA 3.1 8B Instruct**: For generating and executing data analysis, visualization, and modeling code.
+- **Python**: The primary programming language used for script generation.
+- **Pandas**: For data manipulation and analysis.
+- **Streamlit** : For Streamlit App
 
 ## Usage
-1. Run the Streamlit app:
-   ```bash
-   streamlit run Data_Analysis.py
-   ```
-2. Upload your dataset and receive the generated EDA code.
-3. Download the generated code for your projects.
 
-## Contributing
-Contributions are welcome! Please fork the repository and submit a pull request.
+1. Clone the repository:
+    ```bash
+    git clone https://github.com/Ankit-KK/GenAi-For-Data-Analysis.git
+    ```
+2. Install the required dependencies:
+    ```bash
+    pip install -r requirements.txt
+    ```
+3. Run the script to generate a new data analysis project:
+    ```bash
+    python Data_Analysis.py
+    ```
+4. Follow the prompts to input your dataset and select options for EDA, preprocessing, feature selection, model training, and evaluation.
+
+## Example
+
+Here is an example of how to use the script:
+
+1. Provide a dataset file (CSV format).
+2. The script will generate a Python script with the following structure:
+    - **EDA**: Generate summary statistics and visualizations.
+    - **Preprocessing**: Clean and prepare the data.
+    - **Feature Selection**: Select the most relevant features.
+    - **Modeling**: Train and evaluate multiple models.
+    - **Evaluation**: Compare models and select the best one.
+
+## Contribution
+
+Contributions are welcome! Please fork the repository and submit a pull request for any improvements or bug fixes.
 
 ## License
+
 This project is licensed under the MIT License.
 
-## Acknowledgements
-- [OpenAI](https://www.openai.com/)
-- [Streamlit](https://www.streamlit.io/)
+## Contact
+
+For any questions or inquiries, please contact:
+- **Name**: Ankit Kumar
+- **Email**: ankitashuk20@gmail.com
+- **LinkedIn**: [Ankit Kumar](https://linkedin.com/in/ankit-kumar-a8521a252)
