@@ -1,11 +1,14 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from io import StringIO
 import matplotlib.pyplot as plt
 import seaborn as sns
 from openai import OpenAI
 import traceback
+from io import StringIO
+import re
+import base64
+import os
 
 # Initialize OpenAI client with your NVIDIA API base URL and API key
 @st.cache_resource
@@ -19,9 +22,9 @@ def dataset_to_string(df):
     """Convert a dataset to a string format suitable for the model."""
     data_sample = df.head().to_string()
     data_info = df.describe(include='all').to_string()
-    return data_sample, data_info
+    return f"Data Sample:\n{data_sample}\n\nData Description:\n{data_info}"
 
-def create_eda_prompt(data_sample, data_info):
+def create_eda_prompt(data_str):
     """Create a custom EDA prompt for the language model."""
     return f"""
     **Role**: You are an expert data analyst.
@@ -31,12 +34,12 @@ def create_eda_prompt(data_sample, data_info):
     **Dataset Overview**:
     - **Data Sample**:
       ```
-      {data_sample}
+      {data_str.split('Data Description:')[0].strip()}
       ```
 
     - **Data Description**:
       ```
-      {data_info}
+      {data_str.split('Data Description:')[1].strip()}
       ```
 
     **Tasks**:
@@ -98,8 +101,33 @@ def create_eda_prompt(data_sample, data_info):
     - Include any visualizations as part of the output to support the findings and provide a clear understanding of the data.
     """
 
+def preprocess_generated_code(code):
+    # Remove any markdown code block indicators
+    code = re.sub(r'```python|```', '', code)
+    
+    # Remove any explanatory text before the actual code
+    code = re.sub(r'^.*?import', 'import', code, flags=re.DOTALL)
+    
+    # Replace triple quotes with double quotes
+    code = code.replace("'''", '"""')
+    
+    # Ensure necessary imports are present
+    if "import matplotlib.pyplot as plt" not in code:
+        code = "import matplotlib.pyplot as plt\n" + code
+    if "import seaborn as sns" not in code:
+        code = "import seaborn as sns\n" + code
+    
+    return code.strip()
+
+def get_binary_file_downloader_html(bin_file, file_label='File'):
+    with open(bin_file, 'rb') as f:
+        data = f.read()
+    bin_str = base64.b64encode(data).decode()
+    href = f'<a href="data:application/octet-stream;base64,{bin_str}" download="{os.path.basename(bin_file)}">Download {file_label}</a>'
+    return href
+
 def main():
-    st.title("Comprehensive Exploratory Data Analysis")
+    st.title("Exploratory Data Analysis (EDA) Code Generator")
 
     uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
     
@@ -108,49 +136,45 @@ def main():
         st.write("Dataset Preview:")
         st.dataframe(df.head())
 
-        if st.button("Generate EDA"):
-            data_sample, data_info = dataset_to_string(df)
-            eda_prompt = create_eda_prompt(data_sample, data_info)
+        if st.button("Generate EDA Code"):
+            data_str = dataset_to_string(df)
+            eda_prompt = create_eda_prompt(data_str)
 
             client = get_openai_client()
 
             with st.spinner("Generating EDA code..."):
-                try:
-                    completion = client.chat.completions.create(
-                        model="meta/llama-3.1-8b-instruct",
-                        messages=[{"role": "user", "content": eda_prompt}],
-                        temperature=0.2,
-                        top_p=0.7,
-                        max_tokens=2048,
-                        stream=True
-                    )
-                    generated_code = ""
-                    for chunk in completion:
-                        if chunk.choices[0].delta.content is not None:
-                            generated_code += chunk.choices[0].delta.content
+                completion = client.chat.completions.create(
+                    model="meta/llama-3.1-8b-instruct",
+                    messages=[{"role": "user", "content": eda_prompt}],
+                    temperature=0.5,
+                    top_p=0.7,
+                    max_tokens=2048,
+                    stream=True
+                )
 
-                    # Preprocess the generated code
-                    processed_code = generated_code.replace("'''", '"""').replace("''", '"')
-                    if "import matplotlib.pyplot as plt" not in processed_code:
-                        processed_code = "import matplotlib.pyplot as plt\n" + processed_code
-                    if "import seaborn as sns" not in processed_code:
-                        processed_code = "import seaborn as sns\n" + processed_code
+                generated_code = ""
+                for chunk in completion:
+                    if chunk.choices[0].delta.content is not None:
+                        generated_code += chunk.choices[0].delta.content
 
-                    st.subheader("Generated Code:")
-                    st.code(processed_code)
+            # Preprocess the generated code
+            processed_code = preprocess_generated_code(generated_code)
 
-                    # Save to Python file
-                    file_path = "EDA_generated.py"
-                    with open(file_path, "w") as f:
-                        f.write(processed_code)
-                    st.success(f"Generated code saved to '{file_path}'")
+            st.subheader("Generated Code:")
+            st.code(processed_code)
 
-                    # Warning message about potential code adjustments
-                    st.warning("The generated code might contain minor errors or require slight adjustments.")
+            # Save to Python file
+            file_path = "eda_generated.py"
+            with open(file_path, "w") as f:
+                f.write(processed_code)
+            st.success(f"Generated code saved to '{file_path}'")
 
-                except Exception as e:
-                    st.error("Error generating code.")
-                    st.error(traceback.format_exc())
+            # Add download button for the generated Python file
+            with open(file_path, 'r') as f:
+                st.download_button('Download EDA Code', f, file_name=file_path, mime='text/plain')
+
+            # Warning message about potential code adjustments
+            st.warning("The generated code might contain minor errors or require slight adjustments.")
 
 if __name__ == "__main__":
     main()
