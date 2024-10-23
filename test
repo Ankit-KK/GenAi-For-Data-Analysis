@@ -10,13 +10,10 @@ import re
 import base64
 import os
 
-# Initialize OpenAI client with a custom API key
+# Initialize OpenAI client with API key from secrets
 @st.cache_resource
-def get_openai_client(api_key):
-    return OpenAI(
-        base_url="https://integrate.api.nvidia.com/v1",
-        api_key=api_key
-    )
+def get_openai_client():
+    return OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 def dataset_to_string(df):
     """Convert a dataset to a string format suitable for the model."""
@@ -129,14 +126,6 @@ def get_binary_file_downloader_html(bin_file, file_label='File'):
 def main():
     st.title("ExploraGen")
 
-    # Updated API key message to be more welcoming and emphasize it's free
-    st.info("🎉 Get started with a free NVIDIA API key! Just click here: [Get Your Free NVIDIA Meta LLaMA API Key](https://build.nvidia.com/meta/llama-3_1-405b-instruct)")
-    api_key = st.text_input("Enter your API Key:", type="password", help="Don't worry, it's completely free!")
-
-    if not api_key:
-        st.error("Please enter your API key to continue. It only takes a minute to get one!")
-        return
-
     uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
     
     if uploaded_file is not None:
@@ -148,12 +137,11 @@ def main():
             data_str = dataset_to_string(df)
             eda_prompt = create_eda_prompt(data_str)
 
-            client = get_openai_client(api_key)
-
             try:
+                client = get_openai_client()
+                
                 with st.spinner("Generating EDA code..."):
                     completion = client.chat.completions.create(
-                        model="meta/llama-3.1-8b-instruct",
                         messages=[{"role": "user", "content": eda_prompt}],
                         temperature=0.5,
                         top_p=0.7,
@@ -186,8 +174,7 @@ def main():
                 st.warning("The generated code might contain minor errors or require slight adjustments.")
 
             except Exception as e:
-                st.error("Oops! The API key seems invalid. Please make sure you've entered it correctly.")
-                st.info("Need a new API key? Get one for free here: [NVIDIA Meta LLaMA API Key](https://build.nvidia.com/meta/llama-3_1-405b-instruct)")
+                st.error("An error occurred during code generation. Please check your configuration and try again.")
 
 if __name__ == "__main__":
     main()
