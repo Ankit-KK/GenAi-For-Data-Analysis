@@ -129,14 +129,16 @@ def get_binary_file_downloader_html(bin_file, file_label='File'):
 def main():
     st.title("ExploraGen")
 
-    # Prompt the user to input their API key at the start of the app
-    st.warning("The default API key credits are over. Please use your own NVIDIA API Key.")
-    st.info("You can get an API key from here: [NVIDIA Meta LLaMA API Key](https://build.nvidia.com/meta/llama-3_1-405b-instruct)")
-    api_key = st.text_input("Enter your NVIDIA API Key:", type="password")
+    api_key = st.secrets["api_key"]
 
-    if not api_key:
-        st.error("API Key is required to proceed.")
-        return
+    # Prompt the user to input their API key at the start of the app
+    #st.warning("The default API key credits are over. Please use your own NVIDIA API Key.")
+    #st.info("You can get an API key from here: [NVIDIA Meta LLaMA API Key](https://build.nvidia.com/meta/llama-3_1-405b-instruct)")
+    #api_key = st.text_input("Enter your NVIDIA API Key:", type="password")
+
+    #if not api_key:
+        #st.error("API Key is required to proceed.")
+        #return
 
     uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
     
