@@ -13,7 +13,7 @@ import os
 # Initialize OpenAI client with a custom API key from Streamlit secrets
 @st.cache_resource
 def get_openai_client():
-    api_key = st.secrets["API_KEY"]
+    api_key = st.secrets["api_key"]
     return OpenAI(
         base_url="https://integrate.api.nvidia.com/v1",
         api_key=api_key
