@@ -9,7 +9,7 @@ import base64
 def get_openai_client():
     return OpenAI(
         base_url="https://integrate.api.nvidia.com/v1",
-        api_key="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"
+        api_key=st.secrets["API_KEY"]
     )
 
 # Convert dataset to a formatted string
