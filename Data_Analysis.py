@@ -76,7 +76,7 @@ def main():
     st.title("ExploraGen")
 
     # Load API key from Streamlit secrets
-    api_key = st.secrets["API_KEY"]
+    api_key = st.secrets["api_key"]
 
     uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
     
