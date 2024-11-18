@@ -1,110 +1,106 @@
 import streamlit as st
 import pandas as pd
 import re
-import base64
 from openai import OpenAI
+import base64
 
-# Initialize OpenAI client with the NVIDIA API
+# Initialize OpenAI client
 @st.cache_resource
 def get_openai_client():
     return OpenAI(
         base_url="https://integrate.api.nvidia.com/v1",
-        api_key=st.secrets["API_KEY"]  # Securely fetch the API key from Streamlit secrets
+        api_key="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"
     )
 
+# Convert dataset to a formatted string
 def dataset_to_string(df):
-    """Convert a dataset to a string format suitable for the model."""
-    data_sample = df.head().to_string()
-    
-    # Use describe based on pandas version
     try:
-        data_info = df.describe(include='all', datetime_is_numeric=True).to_string()
-    except TypeError:  # For older pandas versions without datetime_is_numeric
+        data_sample = df.head().to_string()
         data_info = df.describe(include='all').to_string()
-    
+    except Exception as e:
+        st.error(f"Error processing dataset: {e}")
+        return ""
     return f"Data Sample:\n{data_sample}\n\nData Description:\n{data_info}"
 
+# Generate EDA prompt
 def create_eda_prompt(data_str):
-    """Create a custom EDA prompt for the language model."""
     return f"""
-    You are a data analysis expert.
+    You are a data analyst. Analyze the dataset below and provide EDA insights:
 
-    I have provided a dataset that contains both numerical and categorical features. Your task is to perform a thorough exploratory data analysis (EDA) to uncover insights, patterns, and any potential issues in the data.
+    **Data Sample:**
+    ```
+    {data_str.split('Data Description:')[0].strip()}
+    ```
 
-    **Dataset Overview**:
-    - **Data Sample**:
-      ```
-      {data_str.split('Data Description:')[0].strip()}
-      ```
-    - **Data Description**:
-      ```
-      {data_str.split('Data Description:')[1].strip()}
-      ```
+    **Data Description:**
+    ```
+    {data_str.split('Data Description:')[1].strip()}
+    ```
 
-    **Tasks**:
-    1. Overview of data structure, missing values, and column data types.
-    2. Descriptive statistics for numerical columns (mean, median, standard deviation, etc.).
-    3. Visualization of numerical and categorical distributions (histograms, bar plots).
-    4. Correlation analysis with a heatmap.
-    5. Suggestions for handling missing values and potential data issues.
+    Tasks:
+    - Inspect the dataset structure and missing values.
+    - Provide descriptive statistics.
+    - Suggest potential data cleaning steps.
+    - Highlight key trends and patterns.
 
-    Provide Python code for these tasks, ensuring it is well-commented and ready for execution.
+    Respond with Python code and explanations.
     """
 
+# Preprocess generated code
 def preprocess_generated_code(code):
-    """Clean up and standardize generated Python code."""
-    code = re.sub(r'```python|```', '', code)  # Remove markdown formatting
+    code = re.sub(r'```python|```', '', code)
     return code.strip()
 
+# Main Streamlit app function
 def main():
-    st.title("Exploratory Data Analysis with NVIDIA Meta LLaMA 3.2")
-    st.write("Upload a dataset and let the model generate Python code for comprehensive EDA.")
+    st.title("Exploratory Data Analysis with Llama")
 
-    uploaded_file = st.file_uploader("Upload a CSV file", type=["csv"])
+    client = get_openai_client()
 
+    uploaded_file = st.file_uploader("Upload a CSV file for analysis", type="csv")
     if uploaded_file:
-        # Load the dataset
         df = pd.read_csv(uploaded_file)
         st.write("Dataset Preview:")
         st.dataframe(df.head())
 
         if st.button("Generate EDA Code"):
             data_str = dataset_to_string(df)
+            if not data_str:
+                return
+            
             eda_prompt = create_eda_prompt(data_str)
-            client = get_openai_client()
 
             try:
-                with st.spinner("Generating EDA code with Meta LLaMA 3.2..."):
+                with st.spinner("Generating EDA code..."):
                     completion = client.chat.completions.create(
-                        model="meta/llama-3.2-405b-instruct",
+                        model="meta/llama-3.1-405b-instruct",
                         messages=[{"role": "user", "content": eda_prompt}],
-                        temperature=0.2,
+                        temperature=0.5,
                         top_p=0.7,
                         max_tokens=2048,
                         stream=True
                     )
 
-                    # Collect the generated code
                     generated_code = ""
                     for chunk in completion:
-                        if chunk.choices[0].delta.content is not None:
+                        if chunk.choices[0].delta.content:
                             generated_code += chunk.choices[0].delta.content
 
-                # Preprocess and display the generated code
+                # Process and display the generated code
                 processed_code = preprocess_generated_code(generated_code)
                 st.subheader("Generated EDA Code:")
-                st.code(processed_code, language="python")
+                st.code(processed_code)
 
-                # Save to file
-                file_path = "eda_generated_llama32.py"
+                # Provide download option
+                file_path = "eda_generated.py"
                 with open(file_path, "w") as f:
                     f.write(processed_code)
-                st.success("Code generation complete! You can download the Python file below.")
-                st.download_button("Download EDA Code", processed_code, file_name=file_path, mime="text/plain")
+
+                with open(file_path, 'r') as f:
+                    st.download_button("Download Generated Code", f, file_name=file_path, mime="text/plain")
 
             except Exception as e:
-                st.error("An error occurred while generating the EDA code.")
-                st.exception(e)
+                st.error(f"Error generating EDA code: {e}")
 
 if __name__ == "__main__":
     main()
