@@ -9,7 +9,7 @@ import base64
 def get_openai_client():
     return OpenAI(
         base_url="https://integrate.api.nvidia.com/v1",
-        api_key=st.secrets["API_KEY"]
+        api_key= st.secrets["API_KEY"]
     )
 
 # Convert dataset to a formatted string
@@ -122,7 +122,6 @@ def main():
                 processed_code = preprocess_generated_code(generated_code)
                 st.subheader("Generated EDA Code:")
                 st.code(processed_code)
-                
 
                 # Provide download option
                 file_path = "eda_generated.py"
@@ -131,8 +130,6 @@ def main():
 
                 with open(file_path, 'r') as f:
                     st.download_button("Download Generated Code", f, file_name=file_path, mime="text/plain")
-
-        
 
             except Exception as e:
                 st.error(f"Error generating EDA code: {e}")
