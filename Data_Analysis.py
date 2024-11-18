@@ -131,7 +131,7 @@ def main():
                 with open(file_path, 'r') as f:
                     st.download_button("Download Generated Code", f, file_name=file_path, mime="text/plain")
 
-            st.warning("The generated code might require minor adjustments before execution.")
+        st.warning("The generated code might require minor adjustments before execution.")
 
             except Exception as e:
                 st.error(f"Error generating EDA code: {e}")
