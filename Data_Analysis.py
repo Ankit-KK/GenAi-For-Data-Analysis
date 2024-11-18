@@ -122,7 +122,7 @@ def main():
                 processed_code = preprocess_generated_code(generated_code)
                 st.subheader("Generated EDA Code:")
                 st.code(processed_code)
-                st.warning("The generated code might require minor adjustments before execution.")
+                
 
                 # Provide download option
                 file_path = "eda_generated.py"
