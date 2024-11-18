@@ -15,7 +15,13 @@ def get_openai_client():
 def dataset_to_string(df):
     """Convert a dataset to a string format suitable for the model."""
     data_sample = df.head().to_string()
-    data_info = df.describe(include='all', datetime_is_numeric=True).to_string()
+    
+    # Use describe based on pandas version
+    try:
+        data_info = df.describe(include='all', datetime_is_numeric=True).to_string()
+    except TypeError:  # For older pandas versions without datetime_is_numeric
+        data_info = df.describe(include='all').to_string()
+    
     return f"Data Sample:\n{data_sample}\n\nData Description:\n{data_info}"
 
 def create_eda_prompt(data_str):
