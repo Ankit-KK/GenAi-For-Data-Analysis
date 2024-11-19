@@ -155,6 +155,8 @@ def main():
             except Exception as e:
                 st.error(f"Error generating EDA code: {e}")
 
+
+
     # Add feedback form
     st.markdown("---")
     st.subheader("Feedback")
@@ -169,12 +171,12 @@ def main():
             save_feedback(feedback_rating, feedback_text, feedback_email)
             st.success("Thank you for your feedback!")
 
-    # Display recent feedbacks
-    st.markdown("---")
-    st.subheader("Recent Feedbacks")
-    
+    # Display recent feedbacks only if they exist
     recent_feedbacks = load_feedback()
     if recent_feedbacks:
+        st.markdown("---")
+        st.subheader("Recent Feedbacks")
+        
         for feedback in recent_feedbacks:
             with st.container():
                 col1, col2 = st.columns([1, 4])
