@@ -113,10 +113,10 @@ def main():
         st.write("Dataset Preview:")
         st.dataframe(df.head())
 
-        # Create 2 columns layout: one for main content and one for feedback
-        col1, col2 = st.columns([3, 1])  # 3 for the left side, 1 for the right side
+        # Create 2 columns layout: one for main content (EDA) and one for feedback
+        col1, col2 = st.columns([3, 1])  # 3 for the left side (EDA), 1 for the right side (feedback)
 
-        with col1:
+        with col1:  # Left column for EDA
             if st.button("Generate EDA Code"):
                 data_str = dataset_to_string(df)
                 if not data_str:
@@ -155,9 +155,8 @@ def main():
 
                 except Exception as e:
                     st.error(f"Error generating EDA code: {e}")
-        
-        # Right side column for feedback section
-        with col2:
+
+        with col2:  # Right column for feedback section
             st.subheader("Leave Your Feedback")
 
             user_email = st.text_input("Enter your email (this will be hidden in the feedback)")
@@ -165,14 +164,14 @@ def main():
 
             if st.button("Submit Feedback"):
                 if user_email and feedback:
-                    save_feedback("Random User", feedback)
+                    save_feedback("Random User", feedback)  # Hide real email and use a placeholder
                     st.success("Your feedback has been submitted!")
 
             # Display last 5 feedbacks
             st.subheader("Recent Feedback")
             feedbacks = get_last_feedbacks()
             for feedback in feedbacks:
-                st.write(f"- {feedback}")
+                st.write(f"- {feedback.strip()}")  # Remove newline characters from feedback
 
 if __name__ == "__main__":
     main()
