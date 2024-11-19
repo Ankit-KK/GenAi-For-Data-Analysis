@@ -11,7 +11,7 @@ import os
 def get_openai_client(api_key):
     return OpenAI(
         base_url="https://integrate.api.nvidia.com/v1",  # NVIDIA API endpoint
-        api_key=api_key  # Your NVIDIA API key
+        api_key=st.secrets["API_KEY"]  # Your NVIDIA API key
     )
 
 def dataset_to_string(df):
