@@ -79,8 +79,33 @@ def preprocess_generated_code(code):
     code = re.sub(r'```python|```', '', code)
     return code.strip()
 
-# Main Streamlit app function
-# ... existing imports and functions remain the same ...
+import streamlit as st
+import pandas as pd
+import re
+from openai import OpenAI
+import json
+from datetime import datetime
+
+# ... existing OpenAI client and dataset functions remain the same ...
+
+def load_feedback(file_path='feedback.txt', max_entries=5):
+    try:
+        with open(file_path, 'r') as f:
+            feedbacks = [json.loads(line) for line in f]
+            return feedbacks[-max_entries:]  # Return last 5 entries
+    except FileNotFoundError:
+        return []
+
+def save_feedback(rating, text, email, file_path='feedback.txt'):
+    feedback = {
+        'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        'rating': rating,
+        'text': text,
+        'email': email
+    }
+    
+    with open(file_path, 'a') as f:
+        f.write(json.dumps(feedback) + '\n')
 
 def main():
     st.title("Advanced Exploratory Data Analysis with Llama")
@@ -137,12 +162,30 @@ def main():
     with st.form(key="feedback_form"):
         feedback_rating = st.slider("How would you rate this tool?", 1, 5, 3)
         feedback_text = st.text_area("Please share your feedback or suggestions:")
+        feedback_email = st.text_input("Email (optional):", "")
         submit_button = st.form_submit_button(label="Submit Feedback")
         
         if submit_button:
+            save_feedback(feedback_rating, feedback_text, feedback_email)
             st.success("Thank you for your feedback!")
-            st.write(f"Rating: {feedback_rating}")
-            st.write(f"Feedback: {feedback_text}")
+
+    # Display recent feedbacks
+    st.markdown("---")
+    st.subheader("Recent Feedbacks")
+    
+    recent_feedbacks = load_feedback()
+    if recent_feedbacks:
+        for feedback in recent_feedbacks:
+            with st.container():
+                col1, col2 = st.columns([1, 4])
+                with col1:
+                    st.write(f"Rating: {feedback['rating']}/5")
+                with col2:
+                    st.write(f"Comment: {feedback['text']}")
+                st.write(f"Date: {feedback['timestamp']}")
+                st.markdown("---")
+    else:
+        st.write("No feedbacks yet!")
 
 if __name__ == "__main__":
     main()
