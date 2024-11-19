@@ -5,5 +5,3 @@ seaborn
 streamlit
 openai
 fpdf
-json
-datetime
