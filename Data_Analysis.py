@@ -105,8 +105,8 @@ def get_last_feedbacks():
 def main():
     st.title("In-depth Exploratory Data Analysis with Llama")
 
-    # Create layout: one main content column (EDA) and one feedback container that will be placed at the bottom-right
-    col1, col2 = st.columns([3, 1])  # 3 for the left side (EDA), 1 for the right side (feedback)
+    # Create layout with two columns: one for EDA content and one for feedback on the right
+    col1, col2 = st.columns([3, 1])  # Left column (main content), Right column (feedback)
 
     with col1:  # Left column for EDA content
         uploaded_file = st.file_uploader("Upload a CSV file for analysis", type="csv")
@@ -154,10 +154,9 @@ def main():
 
                 except Exception as e:
                     st.error(f"Error generating EDA code: {e}")
-    
-    # Create a separate container for feedback that stays at the bottom-right
-    with col2:  # Right column for feedback section at the bottom
-        st.markdown("<br><br><br>", unsafe_allow_html=True)  # Add spacing to push the feedback form to the bottom
+
+    with col2:  # Right column for feedback
+        st.markdown("<br><br><br><br><br>", unsafe_allow_html=True)  # Add spacing to push the feedback form down
 
         st.subheader("Leave Your Feedback")
 
