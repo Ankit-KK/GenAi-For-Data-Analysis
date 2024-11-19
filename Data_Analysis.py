@@ -113,61 +113,66 @@ def main():
         st.write("Dataset Preview:")
         st.dataframe(df.head())
 
-        if st.button("Generate EDA Code"):
-            data_str = dataset_to_string(df)
-            if not data_str:
-                return
-            
-            eda_prompt = create_eda_prompt(data_str)
+        # Create 2 columns layout: one for main content and one for feedback
+        col1, col2 = st.columns([3, 1])  # 3 for the left side, 1 for the right side
 
-            try:
-                with st.spinner("Generating EDA code..."):
-                    completion = client.chat.completions.create(
-                        model="meta/llama-3.1-405b-instruct",
-                        messages=[{"role": "user", "content": eda_prompt}],
-                        temperature=0.5,
-                        top_p=0.7,
-                        max_tokens=2048,
-                        stream=True
-                    )
+        with col1:
+            if st.button("Generate EDA Code"):
+                data_str = dataset_to_string(df)
+                if not data_str:
+                    return
+                
+                eda_prompt = create_eda_prompt(data_str)
 
-                    generated_code = ""
-                    for chunk in completion:
-                        if chunk.choices[0].delta.content:
-                            generated_code += chunk.choices[0].delta.content
+                try:
+                    with st.spinner("Generating EDA code..."):
+                        completion = client.chat.completions.create(
+                            model="meta/llama-3.1-405b-instruct",
+                            messages=[{"role": "user", "content": eda_prompt}],
+                            temperature=0.5,
+                            top_p=0.7,
+                            max_tokens=2048,
+                            stream=True
+                        )
 
-                # Process and display the generated code
-                processed_code = preprocess_generated_code(generated_code)
-                st.subheader("Generated EDA Code:")
-                st.code(processed_code)
+                        generated_code = ""
+                        for chunk in completion:
+                            if chunk.choices[0].delta.content:
+                                generated_code += chunk.choices[0].delta.content
 
-                # Provide download option
-                file_path = "eda_generated.py"
-                with open(file_path, "w") as f:
-                    f.write(processed_code)
+                    # Process and display the generated code
+                    processed_code = preprocess_generated_code(generated_code)
+                    st.subheader("Generated EDA Code:")
+                    st.code(processed_code)
 
-                with open(file_path, 'r') as f:
-                    st.download_button("Download Generated Code", f, file_name=file_path, mime="text/plain")
+                    # Provide download option
+                    file_path = "eda_generated.py"
+                    with open(file_path, "w") as f:
+                        f.write(processed_code)
 
-            except Exception as e:
-                st.error(f"Error generating EDA code: {e}")
+                    with open(file_path, 'r') as f:
+                        st.download_button("Download Generated Code", f, file_name=file_path, mime="text/plain")
 
-        # Feedback Section
-        st.subheader("Leave Your Feedback")
+                except Exception as e:
+                    st.error(f"Error generating EDA code: {e}")
+        
+        # Right side column for feedback section
+        with col2:
+            st.subheader("Leave Your Feedback")
 
-        user_email = st.text_input("Enter your email (this will be hidden in the feedback)")
-        feedback = st.text_area("Your Suggestions for Improvement")
+            user_email = st.text_input("Enter your email (this will be hidden in the feedback)")
+            feedback = st.text_area("Your Suggestions for Improvement")
 
-        if st.button("Submit Feedback"):
-            if user_email and feedback:
-                save_feedback("Random User", feedback)
-                st.success("Your feedback has been submitted!")
+            if st.button("Submit Feedback"):
+                if user_email and feedback:
+                    save_feedback("Random User", feedback)
+                    st.success("Your feedback has been submitted!")
 
-        # Display last 5 feedbacks
-        st.subheader("Recent Feedback")
-        feedbacks = get_last_feedbacks()
-        for feedback in feedbacks:
-            st.write(f"- {feedback}")
+            # Display last 5 feedbacks
+            st.subheader("Recent Feedback")
+            feedbacks = get_last_feedbacks()
+            for feedback in feedbacks:
+                st.write(f"- {feedback}")
 
 if __name__ == "__main__":
     main()
