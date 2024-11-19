@@ -1,205 +1,179 @@
 import streamlit as st
 import pandas as pd
-import re
 from openai import OpenAI
-import json
-from datetime import datetime
+import traceback
+import re
+import base64
+import os
 
-# Initialize OpenAI client
+# Initialize NVIDIA OpenAI client
 @st.cache_resource
-def get_openai_client():
+def get_openai_client(api_key):
     return OpenAI(
-        base_url="https://integrate.api.nvidia.com/v1",
-        api_key=st.secrets["API_KEY"]
+        base_url="https://integrate.api.nvidia.com/v1",  # NVIDIA API endpoint
+        api_key=api_key  # Your NVIDIA API key
     )
 
-# Convert dataset to a formatted string
 def dataset_to_string(df):
-    try:
-        data_sample = df.head().to_string()
-        data_info = df.describe(include='all').to_string()
-    except Exception as e:
-        st.error(f"Error processing dataset: {e}")
-        return ""
+    """Convert a dataset to a string format suitable for the model."""
+    data_sample = df.head().to_string()
+    data_info = df.describe(include='all').to_string()
     return f"Data Sample:\n{data_sample}\n\nData Description:\n{data_info}"
 
-# Generate an enhanced EDA prompt
-def create_eda_prompt(data_str):
+def create_ml_training_prompt(data_str, target_column):
+    """Create a detailed prompt for generating a machine learning pipeline."""
     return f"""
-    **Role**: You are an advanced data analyst and visualization expert.
+    **Role**: You are an expert Data Scientist and Machine Learning Engineer with a focus on interpretability, transparency, and robust model development.
 
-    I have provided you with a dataset for performing a detailed exploratory data analysis (EDA). Your task is to identify trends, relationships, and anomalies in the dataset using statistical and visualization techniques.
+    I have provided you with a dataset containing various features, including the target column '{target_column}'. Your task is to create a Python script for a comprehensive machine learning pipeline. The dataset includes a mix of numerical and categorical features. Please ensure all steps are well-documented and explain the rationale behind each decision.
 
-    ### Dataset Overview:
-    - **Data Sample:**
+    ### Dataset Overview
+    - **Data Sample**:
       ```
       {data_str.split('Data Description:')[0].strip()}
       ```
-
-    - **Data Description:**
+    - **Data Description**:
       ```
       {data_str.split('Data Description:')[1].strip()}
       ```
 
-    ### Tasks:
+    ### Tasks and Expectations
 
-    **1. Data Inspection:**
-       - Summarize dataset structure (e.g., shape, columns, data types).
-       - Identify missing values and outliers, suggesting appropriate strategies to handle them.
+    **1. Prompt for Target Column:**
+       - Explain why specifying a target column is critical and how it influences the machine learning workflow.
 
-    **2. Descriptive Statistics:**
-       - Compute key statistics (mean, median, mode, standard deviation, skewness, kurtosis).
-       - Highlight any noteworthy trends or anomalies.
+    **2. Data Preparation:**
+       - Separate features and the target variable from the dataset.
+       - Drop irrelevant or redundant columns based on statistical thresholds or domain knowledge.
+       - Handle missing values with appropriate strategies:
+         - For numerical features: Use mean or median imputation.
+         - For categorical features: Use mode imputation or a placeholder value.
+       - Standardize numerical features (e.g., `StandardScaler`) and encode categorical features (e.g., one-hot encoding or target encoding).
+       - Clearly describe the impact of each preprocessing step on the dataset and model performance.
 
-    **3. Visual Exploration:**
-       - Plot histograms, box plots, and density plots for numerical features.
-       - Use bar plots or count plots for categorical variables.
-       - Generate scatter plots, pair plots, and correlation heatmaps to explore relationships.
+    **3. Feature Engineering and Selection:**
+       - Identify numerical and categorical columns and apply preprocessing as needed.
+       - Remove multicollinear features using correlation analysis or Variance Inflation Factor (VIF).
+       - Use techniques like Recursive Feature Elimination (RFE) or Tree-based Feature Selection to reduce dimensionality.
+       - Explain how feature engineering contributes to improved model performance.
 
-    **4. Advanced Visualizations:**
-       - Use violin plots and swarm plots to visualize distributions.
-       - Apply clustering techniques (e.g., K-Means or DBSCAN) for grouping insights.
-       - Perform Principal Component Analysis (PCA) for dimensionality reduction and visualize in 2D/3D.
+    **4. Model Training and Evaluation:**
+       - Train and evaluate the following models:
+         - Logistic Regression
+         - Decision Tree Classifier
+         - Random Forest
+         - Gradient Boosting (e.g., XGBoost, LightGBM, CatBoost)
+         - Support Vector Machine (SVM)
+         - K-Nearest Neighbors (KNN)
+         - Multi-Layer Perceptron (MLP)
+         - Naive Bayes
+       - Use stratified K-fold cross-validation (e.g., 5-fold or 10-fold) for consistent performance evaluation.
+       - Include hyperparameter tuning for advanced models using Grid Search or Random Search.
+       - Explain why specific models are included and the role of cross-validation in mitigating overfitting.
 
-    **5. Feature Relationships:**
-       - Analyze relationships between features and a target variable (if applicable).
-       - Use grouped bar charts, trendlines, or advanced statistical tests to uncover patterns.
+    **5. Performance Metrics and Visualization:**
+       - Report and visualize key metrics for each model:
+         - Classification: Accuracy, Precision, Recall, F1-Score, AUC-ROC, and Confusion Matrix.
+         - Regression (if applicable): Mean Absolute Error (MAE), Mean Squared Error (MSE), R-squared.
+       - Plot feature importance for interpretable models.
+       - Provide a detailed explanation of each metric and its significance in evaluating model performance.
 
-    **6. Recommendations and Next Steps:**
-       - Summarize insights, patterns, and anomalies observed in the data.
-       - Provide actionable recommendations, including ideas for feature engineering and preprocessing steps.
+    **6. Model Comparison and Selection:**
+       - Compare all trained models and identify the best-performing one based on evaluation metrics.
+       - Justify the selection of the final model with supporting metrics and visualizations.
 
-    ### Output Requirements:
-    - Python code for each step with detailed comments.
-    - Use libraries such as pandas, numpy, matplotlib, seaborn, and scikit-learn.
-    - Provide clean and modular code that is ready for execution.
-    - Include explanations and visualizations in the output to ensure interpretability.
+    **7. Final Model Training and Deployment:**
+       - Train the selected model on the entire training dataset.
+       - Evaluate the model on a separate test set, reporting metrics and insights.
+       - Save the trained model using `pickle` or `joblib` for deployment.
+       - Include instructions for loading the saved model and making predictions.
+
+    **8. Code Verification and Usability:**
+       - Ensure the generated code is modular, executable, and free of errors.
+       - Add detailed comments for each step to make the script user-friendly and explainable, even for non-technical users.
+
+    ### Additional Guidelines
+    - Use Python libraries like `pandas`, `numpy`, `scikit-learn`, `matplotlib`, and `seaborn` to implement the solution.
+    - Avoid unnecessary dependencies, and prioritize computational efficiency.
+    - Ensure all functions and logic are modular and reusable.
+
+    Provide the complete Python script for this pipeline, ready for execution. Each step should include sufficient comments, detailed explanations, and visualizations to enhance interpretability and usability.
     """
 
-# Preprocess the generated code
 def preprocess_generated_code(code):
+    """Preprocess the code generated by the language model."""
     code = re.sub(r'```python|```', '', code)
+    code = code.replace("'''", '"""')
+    if "import matplotlib.pyplot as plt" not in code:
+        code = "import matplotlib.pyplot as plt\n" + code
+    if "import seaborn as sns" not in code:
+        code = "import seaborn as sns\n" + code
     return code.strip()
 
-def load_feedback(file_path='feedback.txt', max_entries=5):
-    feedbacks = []
-    try:
-        with open(file_path, 'r') as f:
-            for line in f:
-                try:
-                    line = line.strip()
-                    if line:  # Skip empty lines
-                        feedback = json.loads(line)
-                        feedbacks.append(feedback)
-                except json.JSONDecodeError:
-                    continue  # Skip invalid JSON lines
-    except FileNotFoundError:
-        # Create the file if it doesn't exist
-        with open(file_path, 'w') as f:
-            pass
-        return []
-    
-    return feedbacks[-max_entries:] if feedbacks else []
-
-def save_feedback(rating, text, email, file_path='feedback.txt'):
-    feedback = {
-        'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        'rating': rating,
-        'text': text,
-        'email': email
-    }
-    
-    try:
-        with open(file_path, 'a') as f:
-            f.write(json.dumps(feedback) + '\n')  # Add newline after each JSON object
-    except Exception as e:
-        st.error(f"Error saving feedback: {str(e)}")
-        return False
-    return True
+def get_binary_file_downloader_html(bin_file, file_label='File'):
+    with open(bin_file, 'rb') as f:
+        data = f.read()
+    bin_str = base64.b64encode(data).decode()
+    href = f'<a href="data:application/octet-stream;base64,{bin_str}" download="{os.path.basename(bin_file)}">Download {file_label}</a>'
+    return href
 
 def main():
-    st.title("Advanced Exploratory Data Analysis with Llama")
+    st.title("MLAutoGen: Advanced Machine Learning Model Trainer")
 
-    client = get_openai_client()
+    # Replace this with your actual NVIDIA API key
+    api_key = st.secrets["API_KEY"]
 
-    uploaded_file = st.file_uploader("Upload a CSV file for analysis", type="csv")
-    if uploaded_file:
+    uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
+    if uploaded_file is not None:
         df = pd.read_csv(uploaded_file)
         st.write("Dataset Preview:")
         st.dataframe(df.head())
 
-        if st.button("Generate EDA Code"):
-            data_str = dataset_to_string(df)
-            if not data_str:
+        target_column = st.text_input("Enter the target column name:")
+        if st.button("Generate ML Models"):
+            if not target_column or target_column not in df.columns:
+                st.error("Please provide a valid target column name.")
                 return
 
-            eda_prompt = create_eda_prompt(data_str)
+            data_str = dataset_to_string(df)
+            ml_prompt = create_ml_training_prompt(data_str, target_column)
+
+            client = get_openai_client(api_key)
 
             try:
-                with st.spinner("Generating EDA code..."):
+                with st.spinner("Generating ML model code..."):
+                    # Use the NVIDIA model
                     completion = client.chat.completions.create(
-                        model="meta/llama-3.2-3b-instruct",
-                        messages=[{"role": "user", "content": eda_prompt}],
-                        temperature=0.5,
-                        top_p=0.9,
+                        model="meta/llama-3.2-3b-instruct",  # Updated model
+                        messages=[{"role": "user", "content": ml_prompt}],
+                        temperature=0.2,
+                        top_p=0.7,
                         max_tokens=2048,
                         stream=True
                     )
 
                     generated_code = ""
                     for chunk in completion:
-                        if chunk.choices[0].delta.content:
+                        if chunk.choices[0].delta.content is not None:
                             generated_code += chunk.choices[0].delta.content
 
                 processed_code = preprocess_generated_code(generated_code)
-                st.subheader("Generated EDA Code:")
+
+                st.subheader("Generated Code:")
                 st.code(processed_code)
 
-                file_path = "eda_generated.py"
+                file_path = "ML_model_generated.py"
                 with open(file_path, "w") as f:
                     f.write(processed_code)
+                st.success(f"Generated code saved to '{file_path}'")
 
-                with open(file_path, "r") as f:
-                    st.download_button("Download Generated Code", f, file_name="eda_generated.py", mime="text/plain")
+                st.markdown(get_binary_file_downloader_html(file_path, 'Generated Python File'), unsafe_allow_html=True)
+
+                st.warning("The generated code might require minor adjustments before execution.")
 
             except Exception as e:
-                st.error(f"Error generating EDA code: {e}")
-
-
-
-    # Add feedback form
-    st.markdown("---")
-    st.subheader("Feedback")
-    
-    with st.form(key="feedback_form"):
-        feedback_rating = st.slider("How would you rate this tool?", 1, 5, 3)
-        feedback_text = st.text_area("Please share your feedback or suggestions:")
-        feedback_email = st.text_input("Email (optional):", "")
-        submit_button = st.form_submit_button(label="Submit Feedback")
-        
-        if submit_button:
-            if save_feedback(feedback_rating, feedback_text, feedback_email):
-                st.success("Thank you for your feedback!")
-            else:
-                st.error("Failed to save feedback. Please try again.")
-
-    # Display recent feedbacks only if they exist
-    recent_feedbacks = load_feedback()
-    if recent_feedbacks:
-        st.markdown("---")
-        st.subheader("Recent Feedbacks")
-        
-        for feedback in recent_feedbacks:
-            with st.container():
-                col1, col2 = st.columns([1, 4])
-                with col1:
-                    st.write(f"Rating: {feedback['rating']}/5")
-                with col2:
-                    st.write(f"Comment: {feedback['text']}")
-                st.write(f"Date: {feedback['timestamp']}")
-                st.markdown("---")
-    else:
-        st.write("No feedbacks yet!")
+                st.error("An error occurred during code generation.")
+                st.exception(traceback.format_exc())
 
 if __name__ == "__main__":
     main()
