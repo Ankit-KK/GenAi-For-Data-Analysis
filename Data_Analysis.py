@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import re
 from openai import OpenAI
+import base64
 
 # Initialize OpenAI client
 @st.cache_resource
@@ -21,67 +22,88 @@ def dataset_to_string(df):
         return ""
     return f"Data Sample:\n{data_sample}\n\nData Description:\n{data_info}"
 
-# Generate an enhanced EDA prompt
+# Generate EDA prompt with in-depth visualizations and analysis
 def create_eda_prompt(data_str):
     return f"""
-    **Role**: You are an advanced data analyst and visualization expert.
+    You are a data analyst specializing in advanced exploratory data analysis (EDA). Analyze the dataset provided below and perform the following tasks:
 
-    I have provided you with a dataset for performing a detailed exploratory data analysis (EDA). Your task is to identify trends, relationships, and anomalies in the dataset using statistical and visualization techniques.
-
-    ### Dataset Overview:
-    - **Data Sample:**
+    **Dataset Overview:**
+    - Data Sample:
       ```
       {data_str.split('Data Description:')[0].strip()}
       ```
 
-    - **Data Description:**
+    - Data Description:
       ```
       {data_str.split('Data Description:')[1].strip()}
       ```
 
-    ### Tasks:
+    **Tasks:**
 
-    **1. Data Inspection:**
-       - Summarize dataset structure (e.g., shape, columns, data types).
-       - Identify missing values and outliers, suggesting appropriate strategies to handle them.
+    1. **Dataset Inspection:**
+       - Inspect the dataset structure (columns, data types, and dimensions).
+       - Identify missing values and outliers. Provide recommendations for handling them.
 
-    **2. Descriptive Statistics:**
-       - Compute key statistics (mean, median, mode, standard deviation, skewness, kurtosis).
-       - Highlight any noteworthy trends or anomalies.
+    2. **Descriptive Statistics:**
+       - Compute summary statistics (mean, median, mode, variance, standard deviation, min, max).
+       - Provide insights into the data distributions (e.g., skewness, kurtosis).
 
-    **3. Visual Exploration:**
-       - Plot histograms, box plots, and density plots for numerical features.
-       - Use bar plots or count plots for categorical variables.
-       - Generate scatter plots, pair plots, and correlation heatmaps to explore relationships.
+    3. **In-depth Visualizations:**
+       - Plot histograms and density plots for numerical features to understand their distributions.
+       - Create scatter plots and pair plots to explore relationships between numerical variables.
+       - Generate box plots to identify outliers and interquartile ranges.
+       - Use bar plots or count plots to visualize the distribution of categorical variables.
+       - Provide advanced visualizations, such as violin plots or swarm plots, where applicable.
 
-    **4. Advanced Visualizations:**
-       - Use violin plots and swarm plots to visualize distributions.
-       - Apply clustering techniques (e.g., K-Means or DBSCAN) for grouping insights.
-       - Perform Principal Component Analysis (PCA) for dimensionality reduction and visualize in 2D/3D.
+    4. **Correlation Analysis:**
+       - Compute and visualize a correlation matrix with a heatmap.
+       - Identify pairs of features with high correlation. Suggest methods to handle multicollinearity.
 
-    **5. Feature Relationships:**
-       - Analyze relationships between features and a target variable (if applicable).
-       - Use grouped bar charts, trendlines, or advanced statistical tests to uncover patterns.
+    5. **Feature Relationships:**
+       - Analyze the relationship between features and a target variable (if specified).
+       - Use grouped bar charts, scatter plots with trendlines, or box plots to highlight significant relationships.
 
-    **6. Recommendations and Next Steps:**
-       - Summarize insights, patterns, and anomalies observed in the data.
-       - Provide actionable recommendations, including ideas for feature engineering and preprocessing steps.
+    6. **Advanced Techniques:**
+       - Perform Principal Component Analysis (PCA) to reduce dimensionality and visualize the data in 2D/3D.
+       - Use clustering (e.g., K-Means or Hierarchical Clustering) to identify groups or patterns in the data.
 
-    ### Output Requirements:
-    - Python code for each step with detailed comments.
-    - Use libraries such as pandas, numpy, matplotlib, seaborn, and scikit-learn.
-    - Provide clean and modular code that is ready for execution.
-    - Include explanations and visualizations in the output to ensure interpretability.
+    7. **Insights and Recommendations:**
+       - Summarize findings, including trends, anomalies, and patterns.
+       - Provide actionable recommendations, such as feature engineering ideas or additional analyses.
+       - Suggest data cleaning or preprocessing steps required for further modeling or analysis.
+
+    **Output Format:**
+    - Provide Python code for each task with detailed comments.
+    - Include visualizations using matplotlib, seaborn, or other libraries.
+    - Use clear print statements to explain the insights from each step.
     """
 
-# Preprocess the generated code
+# Preprocess generated code
 def preprocess_generated_code(code):
     code = re.sub(r'```python|```', '', code)
     return code.strip()
 
+# Save feedback to a text file
+def save_feedback(user_email, feedback):
+    try:
+        with open("feedback.txt", "a") as f:
+            f.write(f"{user_email}: {feedback}\n")
+    except Exception as e:
+        st.error(f"Error saving feedback: {e}")
+
+# Get the last 5 feedbacks from the file
+def get_last_feedbacks():
+    try:
+        with open("feedback.txt", "r") as f:
+            feedbacks = f.readlines()
+        return feedbacks[-5:]
+    except Exception as e:
+        st.error(f"Error reading feedback file: {e}")
+        return []
+
 # Main Streamlit app function
 def main():
-    st.title("Advanced Exploratory Data Analysis with Llama")
+    st.title("In-depth Exploratory Data Analysis with Llama")
 
     client = get_openai_client()
 
@@ -91,55 +113,61 @@ def main():
         st.write("Dataset Preview:")
         st.dataframe(df.head())
 
-        col1, col2 = st.columns([2, 1])  # Add columns for layout
-        with col1:
-            if st.button("Generate EDA Code"):
-                data_str = dataset_to_string(df)
-                if not data_str:
-                    return
+        if st.button("Generate EDA Code"):
+            data_str = dataset_to_string(df)
+            if not data_str:
+                return
+            
+            eda_prompt = create_eda_prompt(data_str)
 
-                eda_prompt = create_eda_prompt(data_str)
+            try:
+                with st.spinner("Generating EDA code..."):
+                    completion = client.chat.completions.create(
+                        model="meta/llama-3.1-405b-instruct",
+                        messages=[{"role": "user", "content": eda_prompt}],
+                        temperature=0.5,
+                        top_p=0.7,
+                        max_tokens=2048,
+                        stream=True
+                    )
 
-                try:
-                    with st.spinner("Generating EDA code..."):
-                        completion = client.chat.completions.create(
-                            model="meta/llama-3.2-3b-instruct",
-                            messages=[{"role": "user", "content": eda_prompt}],
-                            temperature=0.5,
-                            top_p=0.9,
-                            max_tokens=2048,
-                            stream=True
-                        )
+                    generated_code = ""
+                    for chunk in completion:
+                        if chunk.choices[0].delta.content:
+                            generated_code += chunk.choices[0].delta.content
 
-                        generated_code = ""
-                        for chunk in completion:
-                            if chunk.choices[0].delta.content:
-                                generated_code += chunk.choices[0].delta.content
+                # Process and display the generated code
+                processed_code = preprocess_generated_code(generated_code)
+                st.subheader("Generated EDA Code:")
+                st.code(processed_code)
 
-                    # Process and display the generated code
-                    processed_code = preprocess_generated_code(generated_code)
-                    st.subheader("Generated EDA Code:")
-                    st.code(processed_code)
+                # Provide download option
+                file_path = "eda_generated.py"
+                with open(file_path, "w") as f:
+                    f.write(processed_code)
 
-                    # Provide download option
-                    file_path = "eda_generated.py"
-                    with open(file_path, "w") as f:
-                        f.write(processed_code)
+                with open(file_path, 'r') as f:
+                    st.download_button("Download Generated Code", f, file_name=file_path, mime="text/plain")
 
-                    with open(file_path, "r") as f:
-                        st.download_button("Download Generated Code", f, file_name="eda_generated.py", mime="text/plain")
+            except Exception as e:
+                st.error(f"Error generating EDA code: {e}")
 
-                except Exception as e:
-                    st.error(f"Error generating EDA code: {e}")
+        # Feedback Section
+        st.subheader("Leave Your Feedback")
 
-        with col2:
-            st.subheader("Suggestions for Improvement")
-            suggestion = st.text_area("Provide your feedback or suggestions:")
-            if st.button("Submit Feedback"):
-                if suggestion.strip():
-                    st.success("Thank you for your feedback!")
-                else:
-                    st.error("Please enter some feedback before submitting.")
+        user_email = st.text_input("Enter your email (this will be hidden in the feedback)")
+        feedback = st.text_area("Your Suggestions for Improvement")
+
+        if st.button("Submit Feedback"):
+            if user_email and feedback:
+                save_feedback("Random User", feedback)
+                st.success("Your feedback has been submitted!")
+
+        # Display last 5 feedbacks
+        st.subheader("Recent Feedback")
+        feedbacks = get_last_feedbacks()
+        for feedback in feedbacks:
+            st.write(f"- {feedback}")
 
 if __name__ == "__main__":
     main()
