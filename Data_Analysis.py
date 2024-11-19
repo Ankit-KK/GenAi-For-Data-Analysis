@@ -91,44 +91,55 @@ def main():
         st.write("Dataset Preview:")
         st.dataframe(df.head())
 
-        if st.button("Generate EDA Code"):
-            data_str = dataset_to_string(df)
-            if not data_str:
-                return
+        col1, col2 = st.columns([2, 1])  # Add columns for layout
+        with col1:
+            if st.button("Generate EDA Code"):
+                data_str = dataset_to_string(df)
+                if not data_str:
+                    return
 
-            eda_prompt = create_eda_prompt(data_str)
+                eda_prompt = create_eda_prompt(data_str)
 
-            try:
-                with st.spinner("Generating EDA code..."):
-                    completion = client.chat.completions.create(
-                        model="meta/llama-3.2-3b-instruct",
-                        messages=[{"role": "user", "content": eda_prompt}],
-                        temperature=0.5,
-                        top_p=0.9,
-                        max_tokens=2048,
-                        stream=True
-                    )
+                try:
+                    with st.spinner("Generating EDA code..."):
+                        completion = client.chat.completions.create(
+                            model="meta/llama-3.2-3b-instruct",
+                            messages=[{"role": "user", "content": eda_prompt}],
+                            temperature=0.5,
+                            top_p=0.9,
+                            max_tokens=2048,
+                            stream=True
+                        )
 
-                    generated_code = ""
-                    for chunk in completion:
-                        if chunk.choices[0].delta.content:
-                            generated_code += chunk.choices[0].delta.content
+                        generated_code = ""
+                        for chunk in completion:
+                            if chunk.choices[0].delta.content:
+                                generated_code += chunk.choices[0].delta.content
 
-                # Process and display the generated code
-                processed_code = preprocess_generated_code(generated_code)
-                st.subheader("Generated EDA Code:")
-                st.code(processed_code)
+                    # Process and display the generated code
+                    processed_code = preprocess_generated_code(generated_code)
+                    st.subheader("Generated EDA Code:")
+                    st.code(processed_code)
 
-                # Provide download option
-                file_path = "eda_generated.py"
-                with open(file_path, "w") as f:
-                    f.write(processed_code)
+                    # Provide download option
+                    file_path = "eda_generated.py"
+                    with open(file_path, "w") as f:
+                        f.write(processed_code)
 
-                with open(file_path, "r") as f:
-                    st.download_button("Download Generated Code", f, file_name="eda_generated.py", mime="text/plain")
+                    with open(file_path, "r") as f:
+                        st.download_button("Download Generated Code", f, file_name="eda_generated.py", mime="text/plain")
 
-            except Exception as e:
-                st.error(f"Error generating EDA code: {e}")
+                except Exception as e:
+                    st.error(f"Error generating EDA code: {e}")
+
+        with col2:
+            st.subheader("Suggestions for Improvement")
+            suggestion = st.text_area("Provide your feedback or suggestions:")
+            if st.button("Submit Feedback"):
+                if suggestion.strip():
+                    st.success("Thank you for your feedback!")
+                else:
+                    st.error("Please enter some feedback before submitting.")
 
 if __name__ == "__main__":
     main()
