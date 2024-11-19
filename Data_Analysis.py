@@ -105,6 +105,26 @@ def get_last_feedbacks():
 def main():
     st.title("In-depth Exploratory Data Analysis with Llama")
 
+    # Create 2 columns layout: one for main content (EDA) and one for feedback
+    col1, col2 = st.columns([3, 1])  # 3 for the left side (EDA), 1 for the right side (feedback)
+
+    with col2:  # Right column for feedback section
+        st.subheader("Leave Your Feedback")
+
+        user_email = st.text_input("Enter your email (this will be hidden in the feedback)")
+        feedback = st.text_area("Your Suggestions for Improvement")
+
+        if st.button("Submit Feedback"):
+            if user_email and feedback:
+                save_feedback("Random User", feedback)  # Hide real email and use a placeholder
+                st.success("Your feedback has been submitted!")
+
+        # Display last 5 feedbacks
+        st.subheader("Recent Feedback")
+        feedbacks = get_last_feedbacks()
+        for feedback in feedbacks:
+            st.write(f"- {feedback.strip()}")  # Remove newline characters from feedback
+
     client = get_openai_client()
 
     uploaded_file = st.file_uploader("Upload a CSV file for analysis", type="csv")
@@ -112,9 +132,6 @@ def main():
         df = pd.read_csv(uploaded_file)
         st.write("Dataset Preview:")
         st.dataframe(df.head())
-
-        # Create 2 columns layout: one for main content (EDA) and one for feedback
-        col1, col2 = st.columns([3, 1])  # 3 for the left side (EDA), 1 for the right side (feedback)
 
         with col1:  # Left column for EDA
             if st.button("Generate EDA Code"):
@@ -155,23 +172,6 @@ def main():
 
                 except Exception as e:
                     st.error(f"Error generating EDA code: {e}")
-
-        with col2:  # Right column for feedback section
-            st.subheader("Leave Your Feedback")
-
-            user_email = st.text_input("Enter your email (this will be hidden in the feedback)")
-            feedback = st.text_area("Your Suggestions for Improvement")
-
-            if st.button("Submit Feedback"):
-                if user_email and feedback:
-                    save_feedback("Random User", feedback)  # Hide real email and use a placeholder
-                    st.success("Your feedback has been submitted!")
-
-            # Display last 5 feedbacks
-            st.subheader("Recent Feedback")
-            feedbacks = get_last_feedbacks()
-            for feedback in feedbacks:
-                st.write(f"- {feedback.strip()}")  # Remove newline characters from feedback
 
 if __name__ == "__main__":
     main()
