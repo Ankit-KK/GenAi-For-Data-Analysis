@@ -9,7 +9,7 @@ import base64
 def get_openai_client():
     return OpenAI(
         base_url="https://integrate.api.nvidia.com/v1",
-        api_key=st.secrets["API_KEY"]
+        api_key=st.secrets["API_KEy"]
     )
 
 # Convert dataset to a formatted string
@@ -105,35 +105,16 @@ def get_last_feedbacks():
 def main():
     st.title("In-depth Exploratory Data Analysis with Llama")
 
-    # Create 2 columns layout: one for main content (EDA) and one for feedback
+    # Create layout: one main content column (EDA) and one feedback container that will be placed at the bottom-right
     col1, col2 = st.columns([3, 1])  # 3 for the left side (EDA), 1 for the right side (feedback)
 
-    with col2:  # Right column for feedback section
-        st.subheader("Leave Your Feedback")
+    with col1:  # Left column for EDA content
+        uploaded_file = st.file_uploader("Upload a CSV file for analysis", type="csv")
+        if uploaded_file:
+            df = pd.read_csv(uploaded_file)
+            st.write("Dataset Preview:")
+            st.dataframe(df.head())
 
-        user_email = st.text_input("Enter your email (this will be hidden in the feedback)")
-        feedback = st.text_area("Your Suggestions for Improvement")
-
-        if st.button("Submit Feedback"):
-            if user_email and feedback:
-                save_feedback("Random User", feedback)  # Hide real email and use a placeholder
-                st.success("Your feedback has been submitted!")
-
-        # Display last 5 feedbacks
-        st.subheader("Recent Feedback")
-        feedbacks = get_last_feedbacks()
-        for feedback in feedbacks:
-            st.write(f"- {feedback.strip()}")  # Remove newline characters from feedback
-
-    client = get_openai_client()
-
-    uploaded_file = st.file_uploader("Upload a CSV file for analysis", type="csv")
-    if uploaded_file:
-        df = pd.read_csv(uploaded_file)
-        st.write("Dataset Preview:")
-        st.dataframe(df.head())
-
-        with col1:  # Left column for EDA
             if st.button("Generate EDA Code"):
                 data_str = dataset_to_string(df)
                 if not data_str:
@@ -143,6 +124,7 @@ def main():
 
                 try:
                     with st.spinner("Generating EDA code..."):
+                        client = get_openai_client()
                         completion = client.chat.completions.create(
                             model="meta/llama-3.1-405b-instruct",
                             messages=[{"role": "user", "content": eda_prompt}],
@@ -172,6 +154,26 @@ def main():
 
                 except Exception as e:
                     st.error(f"Error generating EDA code: {e}")
+    
+    # Create a separate container for feedback that stays at the bottom-right
+    with col2:  # Right column for feedback section at the bottom
+        st.markdown("<br><br><br>", unsafe_allow_html=True)  # Add spacing to push the feedback form to the bottom
+
+        st.subheader("Leave Your Feedback")
+
+        user_email = st.text_input("Enter your email (this will be hidden in the feedback)")
+        feedback = st.text_area("Your Suggestions for Improvement")
+
+        if st.button("Submit Feedback"):
+            if user_email and feedback:
+                save_feedback("Random User", feedback)  # Hide real email and use a placeholder
+                st.success("Your feedback has been submitted!")
+
+        # Display last 5 feedbacks
+        st.subheader("Recent Feedback")
+        feedbacks = get_last_feedbacks()
+        for feedback in feedbacks:
+            st.write(f"- {feedback.strip()}")  # Remove newline characters from feedback
 
 if __name__ == "__main__":
     main()
