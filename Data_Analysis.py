@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import re
 from openai import OpenAI
+import json
+from datetime import datetime
 
 # Initialize OpenAI client
 @st.cache_resource
@@ -79,22 +81,25 @@ def preprocess_generated_code(code):
     code = re.sub(r'```python|```', '', code)
     return code.strip()
 
-import streamlit as st
-import pandas as pd
-import re
-from openai import OpenAI
-import json
-from datetime import datetime
-
-# ... existing OpenAI client and dataset functions remain the same ...
-
 def load_feedback(file_path='feedback.txt', max_entries=5):
+    feedbacks = []
     try:
         with open(file_path, 'r') as f:
-            feedbacks = [json.loads(line) for line in f]
-            return feedbacks[-max_entries:]  # Return last 5 entries
+            for line in f:
+                try:
+                    line = line.strip()
+                    if line:  # Skip empty lines
+                        feedback = json.loads(line)
+                        feedbacks.append(feedback)
+                except json.JSONDecodeError:
+                    continue  # Skip invalid JSON lines
     except FileNotFoundError:
+        # Create the file if it doesn't exist
+        with open(file_path, 'w') as f:
+            pass
         return []
+    
+    return feedbacks[-max_entries:] if feedbacks else []
 
 def save_feedback(rating, text, email, file_path='feedback.txt'):
     feedback = {
@@ -104,8 +109,13 @@ def save_feedback(rating, text, email, file_path='feedback.txt'):
         'email': email
     }
     
-    with open(file_path, 'a') as f:
-        f.write(json.dumps(feedback) + '\n')
+    try:
+        with open(file_path, 'a') as f:
+            f.write(json.dumps(feedback) + '\n')  # Add newline after each JSON object
+    except Exception as e:
+        st.error(f"Error saving feedback: {str(e)}")
+        return False
+    return True
 
 def main():
     st.title("Advanced Exploratory Data Analysis with Llama")
@@ -168,8 +178,10 @@ def main():
         submit_button = st.form_submit_button(label="Submit Feedback")
         
         if submit_button:
-            save_feedback(feedback_rating, feedback_text, feedback_email)
-            st.success("Thank you for your feedback!")
+            if save_feedback(feedback_rating, feedback_text, feedback_email):
+                st.success("Thank you for your feedback!")
+            else:
+                st.error("Failed to save feedback. Please try again.")
 
     # Display recent feedbacks only if they exist
     recent_feedbacks = load_feedback()
