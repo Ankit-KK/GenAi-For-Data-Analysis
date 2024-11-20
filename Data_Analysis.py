@@ -2,14 +2,23 @@ import streamlit as st
 import pandas as pd
 import re
 from openai import OpenAI
+import os
 
 # Initialize OpenAI client
 @st.cache_resource
 def get_openai_client():
     return OpenAI(
         base_url="https://integrate.api.nvidia.com/v1",
-        api_key= st.secrets["API_KEY"]
+        api_key= st,secrets["API_KEY"]
     )
+
+# Feedback file path
+FEEDBACK_FILE = "feedback.csv"
+
+# Initialize feedback file if it doesn't exist
+if not os.path.exists(FEEDBACK_FILE):
+    feedback_df = pd.DataFrame(columns=["Email_id", "Feedback"])
+    feedback_df.to_csv(FEEDBACK_FILE, index=False)
 
 # Convert dataset to a formatted string
 def dataset_to_string(df):
@@ -79,6 +88,13 @@ def preprocess_generated_code(code):
     code = re.sub(r'```python|```', '', code)
     return code.strip()
 
+# Save feedback to a CSV file
+def save_feedback(email, feedback):
+    new_feedback = pd.DataFrame({"Email_id": [email], "Feedback": [feedback]})
+    existing_feedback = pd.read_csv(FEEDBACK_FILE)
+    updated_feedback = pd.concat([existing_feedback, new_feedback], ignore_index=True)
+    updated_feedback.to_csv(FEEDBACK_FILE, index=False)
+
 # Main Streamlit app function
 def main():
     st.title("Advanced Exploratory Data Analysis with Llama")
@@ -105,7 +121,7 @@ def main():
                         messages=[{"role": "user", "content": eda_prompt}],
                         temperature=0.2,
                         top_p=0.7,
-                        max_tokens=4096,
+                        max_tokens=1024,
                         stream=True
                     )
 
@@ -129,6 +145,19 @@ def main():
 
             except Exception as e:
                 st.error(f"Error generating EDA code: {e}")
+
+    # Feedback Section
+    st.sidebar.subheader("We Value Your Feedback")
+    with st.sidebar.form(key="feedback_form"):
+        email = st.text_input("Email (optional)")
+        feedback = st.text_area("Your Feedback")
+        st.caption("Email ID will be hidden.")
+        if st.form_submit_button("Submit Feedback"):
+            if feedback.strip():  # Ensure feedback is not empty
+                save_feedback(email, feedback)
+                st.success("Thank you for your feedback!")
+            else:
+                st.warning("Please enter some feedback before submitting.")
 
 if __name__ == "__main__":
     main()
