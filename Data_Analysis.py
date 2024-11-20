@@ -20,28 +20,6 @@ if not os.path.exists(FEEDBACK_FILE):
     feedback_df = pd.DataFrame(columns=["Email_id", "Feedback"])
     feedback_df.to_csv(FEEDBACK_FILE, index=False)
 
-# Save feedback to the local feedback.csv file
-def save_feedback(email, feedback):
-    try:
-        # Handle empty email gracefully
-        email = email.strip() if email else ""  # Ensure blank emails are stored as empty strings
-        new_feedback = pd.DataFrame({"Email_id": [email], "Feedback": [feedback]})
-        
-        # Load existing feedback data
-        if os.path.exists(FEEDBACK_FILE):
-            existing_feedback = pd.read_csv(FEEDBACK_FILE)
-        else:
-            existing_feedback = pd.DataFrame(columns=["Email_id", "Feedback"])
-        
-        # Append the new feedback
-        updated_feedback = pd.concat([existing_feedback, new_feedback], ignore_index=True)
-        updated_feedback.to_csv(FEEDBACK_FILE, index=False)
-        
-        # Log success
-        st.success("Feedback saved successfully!")
-    except Exception as e:
-        st.error(f"Failed to save feedback: {e}")
-
 # Convert dataset to a formatted string
 def dataset_to_string(df):
     try:
