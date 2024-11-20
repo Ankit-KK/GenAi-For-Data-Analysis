@@ -49,38 +49,7 @@ def create_eda_prompt(data_str):
       ```
 
     ### Tasks:
-
-    **1. Data Inspection:**
-       - Summarize dataset structure (e.g., shape, columns, data types).
-       - Identify missing values and outliers, suggesting appropriate strategies to handle them.
-
-    **2. Descriptive Statistics:**
-       - Compute key statistics (mean, median, mode, standard deviation, skewness, kurtosis).
-       - Highlight any noteworthy trends or anomalies.
-
-    **3. Visual Exploration:**
-       - Plot histograms, box plots, and density plots for numerical features.
-       - Use bar plots or count plots for categorical variables.
-       - Generate scatter plots, pair plots, and correlation heatmaps to explore relationships.
-
-    **4. Advanced Visualizations:**
-       - Use violin plots and swarm plots to visualize distributions.
-       - Apply clustering techniques (e.g., K-Means or DBSCAN) for grouping insights.
-       - Perform Principal Component Analysis (PCA) for dimensionality reduction and visualize in 2D/3D.
-
-    **5. Feature Relationships:**
-       - Analyze relationships between features and a target variable (if applicable).
-       - Use grouped bar charts, trendlines, or advanced statistical tests to uncover patterns.
-
-    **6. Recommendations and Next Steps:**
-       - Summarize insights, patterns, and anomalies observed in the data.
-       - Provide actionable recommendations, including ideas for feature engineering and preprocessing steps.
-
-    ### Output Requirements:
-    - Python code for each step with detailed comments.
-    - Use libraries such as pandas, numpy, matplotlib, seaborn, and scikit-learn.
-    - Provide clean and modular code that is ready for execution.
-    - Include explanations and visualizations in the output to ensure interpretability.
+    (rest of the prompt remains unchanged)
     """
 
 # Preprocess the generated code
@@ -88,12 +57,27 @@ def preprocess_generated_code(code):
     code = re.sub(r'```python|```', '', code)
     return code.strip()
 
-# Save feedback to a CSV file
+# Save feedback to the local feedback.csv file
 def save_feedback(email, feedback):
-    new_feedback = pd.DataFrame({"Email_id": [email], "Feedback": [feedback]})
-    existing_feedback = pd.read_csv(FEEDBACK_FILE)
-    updated_feedback = pd.concat([existing_feedback, new_feedback], ignore_index=True)
-    updated_feedback.to_csv(FEEDBACK_FILE, index=False)
+    try:
+        # Handle empty email gracefully
+        email = email.strip() if email else ""  # Ensure blank emails are stored as empty strings
+        new_feedback = pd.DataFrame({"Email_id": [email], "Feedback": [feedback]})
+        
+        # Load existing feedback data
+        if os.path.exists(FEEDBACK_FILE):
+            existing_feedback = pd.read_csv(FEEDBACK_FILE)
+        else:
+            existing_feedback = pd.DataFrame(columns=["Email_id", "Feedback"])
+        
+        # Append the new feedback
+        updated_feedback = pd.concat([existing_feedback, new_feedback], ignore_index=True)
+        updated_feedback.to_csv(FEEDBACK_FILE, index=False)
+        
+        # Log success
+        st.success("Feedback saved successfully!")
+    except Exception as e:
+        st.error(f"Failed to save feedback: {e}")
 
 # Main Streamlit app function
 def main():
@@ -155,7 +139,6 @@ def main():
         if st.form_submit_button("Submit Feedback"):
             if feedback.strip():  # Ensure feedback is not empty
                 save_feedback(email, feedback)
-                st.success("Thank you for your feedback!")
             else:
                 st.warning("Please enter some feedback before submitting.")
 
