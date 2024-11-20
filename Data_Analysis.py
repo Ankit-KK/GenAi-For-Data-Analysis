@@ -12,13 +12,20 @@ def get_openai_client():
         api_key= st.secrets["API_KEY"]
     )
 
-# Feedback file path
+# Feedback file path in the app's directory
 FEEDBACK_FILE = "feedback.csv"
 
 # Initialize feedback file if it doesn't exist
 if not os.path.exists(FEEDBACK_FILE):
     feedback_df = pd.DataFrame(columns=["Email_id", "Feedback"])
     feedback_df.to_csv(FEEDBACK_FILE, index=False)
+
+# Save feedback to the local feedback.csv file
+def save_feedback(email, feedback):
+    new_feedback = pd.DataFrame({"Email_id": [email], "Feedback": [feedback]})
+    existing_feedback = pd.read_csv(FEEDBACK_FILE)
+    updated_feedback = pd.concat([existing_feedback, new_feedback], ignore_index=True)
+    updated_feedback.to_csv(FEEDBACK_FILE, index=False)
 
 # Convert dataset to a formatted string
 def dataset_to_string(df):
