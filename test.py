@@ -13,7 +13,7 @@ def feedback_page():
 
     # Create a prominent button to open the Google Form
     st.markdown("""
-    <a href="https://forms.gle/gExh43NfF3oNETRK6" target="_blank">
+    <a href="https://forms.gle/rTrFC4rwqfJ9B6mE9" target="_blank">
         <button style="
             background-color: #4CAF50; 
             color: white; 
@@ -44,13 +44,14 @@ def feedback_page():
 
 # In your main Streamlit app, you can integrate this as a page or section
 def main():
-    # Your existing code...
-    
-    # Add a navigation option
+    # Example of navigation
     page = st.sidebar.radio("Navigate", ["Main App", "Feedback"])
     
     if page == "Feedback":
         feedback_page()
     else:
-        # Your existing main app content
-        pass
+        st.title("Main Application Content")
+        st.write("This is where your main app content goes.")
+
+if __name__ == "__main__":
+    main()
