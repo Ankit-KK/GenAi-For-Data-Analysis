@@ -8,7 +8,7 @@ from langchain_nvidia_ai_endpoints import ChatNVIDIA
 def get_nvidia_client():
     return ChatNVIDIA(
         model="meta/llama-3.2-3b-instruct",
-        api_key="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",
+        api_key= st.secrets["API_KEY"],
         temperature=0.2,
         top_p=0.7,
         max_tokens=1024,
@@ -84,7 +84,7 @@ def preprocess_generated_code(code):
 
 # Main Streamlit app function
 def main():
-    st.title("Advanced Exploratory Data Analysis with NVIDIA AI")
+    st.title("ExploraGen: Advanced Exploratory Data Analysis")
 
     client = get_nvidia_client()
 
