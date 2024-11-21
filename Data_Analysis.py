@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import re
 from openai import OpenAI
-import os
 
 # Initialize OpenAI client
 @st.cache_resource
@@ -82,7 +81,7 @@ def preprocess_generated_code(code):
 
 # Main Streamlit app function
 def main():
-    st.title("ExploraGen: Advanced Exploratory Data Analysis with Llama")
+    st.title("Advanced Exploratory Data Analysis with Llama")
 
     client = get_openai_client()
 
@@ -102,11 +101,11 @@ def main():
             try:
                 with st.spinner("Generating EDA code..."):
                     completion = client.chat.completions.create(
-                        model="meta/llama-3.2-1b-instruct",
+                        model="meta/llama-3.2-3b-instruct",
                         messages=[{"role": "user", "content": eda_prompt}],
-                        temperature=0.2,
-                        top_p=0.7,
-                        max_tokens=1024,
+                        temperature=0.5,
+                        top_p=0.9,
+                        max_tokens=2048,
                         stream=True
                     )
 
