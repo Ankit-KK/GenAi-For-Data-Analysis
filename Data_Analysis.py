@@ -59,6 +59,10 @@ def preprocess_generated_code(code):
 
 def save_feedback(email, feedback):
     try:
+        # Print the current working directory and full file path for debugging
+        print(f"Current Working Directory: {os.getcwd()}")
+        print(f"Full Feedback File Path: {os.path.abspath(FEEDBACK_FILE)}")
+        
         # Validate inputs
         email = email.strip() if email else ""
         feedback = feedback.strip()
@@ -68,15 +72,26 @@ def save_feedback(email, feedback):
             st.warning("Please provide some feedback.")
             return
         
-        # Ensure the directory for the feedback file exists
-        os.makedirs(os.path.dirname(FEEDBACK_FILE) or '.', exist_ok=True)
+        # Verbose logging to understand file operations
+        print(f"Attempting to save feedback. Email: {email}, Feedback: {feedback}")
         
-        # Load existing feedback data
+        # Ensure the directory for the feedback file exists
         try:
-            # Use pandas to read the CSV with error handling
-            existing_feedback = pd.read_csv(FEEDBACK_FILE) if os.path.exists(FEEDBACK_FILE) else \
-                pd.DataFrame(columns=["Email_id", "Feedback", "Timestamp"])
-        except pd.errors.EmptyDataError:
+            os.makedirs(os.path.dirname(FEEDBACK_FILE) or '.', exist_ok=True)
+            print(f"Directory created/exists: {os.path.dirname(FEEDBACK_FILE)}")
+        except Exception as dir_error:
+            print(f"Directory creation error: {dir_error}")
+        
+        # Load existing feedback data with verbose error handling
+        try:
+            if os.path.exists(FEEDBACK_FILE):
+                existing_feedback = pd.read_csv(FEEDBACK_FILE)
+                print(f"Existing feedback loaded. Current rows: {len(existing_feedback)}")
+            else:
+                print(f"Feedback file does not exist: {FEEDBACK_FILE}")
+                existing_feedback = pd.DataFrame(columns=["Email_id", "Feedback", "Timestamp"])
+        except Exception as read_error:
+            print(f"Error reading feedback file: {read_error}")
             existing_feedback = pd.DataFrame(columns=["Email_id", "Feedback", "Timestamp"])
         
         # Prepare new feedback entry with timestamp
@@ -89,20 +104,29 @@ def save_feedback(email, feedback):
         # Append the new feedback
         updated_feedback = pd.concat([existing_feedback, new_feedback], ignore_index=True)
         
-        # Save the updated feedback
-        updated_feedback.to_csv(FEEDBACK_FILE, index=False)
-        
-        # Log success
-        st.success("Feedback saved successfully!")
+        # Save the updated feedback with error logging
+        try:
+            updated_feedback.to_csv(FEEDBACK_FILE, index=False)
+            print(f"Feedback saved successfully. Total rows: {len(updated_feedback)}")
+            st.success("Feedback saved successfully!")
+        except PermissionError:
+            print(f"Permission denied when writing to {FEEDBACK_FILE}")
+            st.error(f"Permission denied. Unable to save feedback to {FEEDBACK_FILE}")
+        except Exception as save_error:
+            print(f"Error saving feedback: {save_error}")
+            st.error(f"Failed to save feedback: {save_error}")
+            
+            # Additional error logging
+            with open("feedback_error_log.txt", "a") as error_log:
+                error_log.write(f"{pd.Timestamp.now()}: {str(save_error)}\n")
     
-    except PermissionError:
-        st.error(f"Permission denied. Unable to save feedback to {FEEDBACK_FILE}. Check file/directory permissions.")
     except Exception as e:
-        st.error(f"Failed to save feedback: {e}")
-        # Optionally log the error to help with debugging
+        print(f"Unexpected error in save_feedback: {e}")
+        st.error(f"Unexpected error: {e}")
+        
+        # Log unexpected errors
         with open("feedback_error_log.txt", "a") as error_log:
-            error_log.write(f"{pd.Timestamp.now()}: {str(e)}\n")
-
+            error_log.write(f"{pd.Timestamp.now()}: Unexpected error - {str(e)}\n")
 # Main Streamlit app function
 def main():
     st.title("Advanced Exploratory Data Analysis with Llama")
