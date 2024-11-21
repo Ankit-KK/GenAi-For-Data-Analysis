@@ -102,7 +102,7 @@ def main():
             try:
                 with st.spinner("Generating EDA code..."):
                     completion = client.chat.completions.create(
-                        model="meta/llama-3.2-1b-instruct",
+                        model="meta/llama-3.1-405b-instruct",
                         messages=[{"role": "user", "content": eda_prompt}],
                         temperature=0.2,
                         top_p=0.7,
