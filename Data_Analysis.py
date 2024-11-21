@@ -57,27 +57,51 @@ def preprocess_generated_code(code):
     code = re.sub(r'```python|```', '', code)
     return code.strip()
 
-# Save feedback to the local feedback.csv file
 def save_feedback(email, feedback):
     try:
-        # Handle empty email gracefully
-        email = email.strip() if email else ""  # Ensure blank emails are stored as empty strings
-        new_feedback = pd.DataFrame({"Email_id": [email], "Feedback": [feedback]})
+        # Validate inputs
+        email = email.strip() if email else ""
+        feedback = feedback.strip()
+        
+        # Check if feedback is empty
+        if not feedback:
+            st.warning("Please provide some feedback.")
+            return
+        
+        # Ensure the directory for the feedback file exists
+        os.makedirs(os.path.dirname(FEEDBACK_FILE) or '.', exist_ok=True)
         
         # Load existing feedback data
-        if os.path.exists(FEEDBACK_FILE):
-            existing_feedback = pd.read_csv(FEEDBACK_FILE)
-        else:
-            existing_feedback = pd.DataFrame(columns=["Email_id", "Feedback"])
+        try:
+            # Use pandas to read the CSV with error handling
+            existing_feedback = pd.read_csv(FEEDBACK_FILE) if os.path.exists(FEEDBACK_FILE) else \
+                pd.DataFrame(columns=["Email_id", "Feedback", "Timestamp"])
+        except pd.errors.EmptyDataError:
+            existing_feedback = pd.DataFrame(columns=["Email_id", "Feedback", "Timestamp"])
+        
+        # Prepare new feedback entry with timestamp
+        new_feedback = pd.DataFrame({
+            "Email_id": [email], 
+            "Feedback": [feedback],
+            "Timestamp": [pd.Timestamp.now()]
+        })
         
         # Append the new feedback
         updated_feedback = pd.concat([existing_feedback, new_feedback], ignore_index=True)
+        
+        # Save the updated feedback
         updated_feedback.to_csv(FEEDBACK_FILE, index=False)
         
         # Log success
         st.success("Feedback saved successfully!")
+    
+    except PermissionError:
+        st.error(f"Permission denied. Unable to save feedback to {FEEDBACK_FILE}. Check file/directory permissions.")
     except Exception as e:
         st.error(f"Failed to save feedback: {e}")
+        # Optionally log the error to help with debugging
+        with open("feedback_error_log.txt", "a") as error_log:
+            error_log.write(f"{pd.Timestamp.now()}: {str(e)}\n")
 
 # Main Streamlit app function
 def main():
