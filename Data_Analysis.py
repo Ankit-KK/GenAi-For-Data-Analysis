@@ -3,12 +3,14 @@ import pandas as pd
 import re
 from langchain_nvidia_ai_endpoints import ChatNVIDIA
 
+api_key= st.secrets["API_KEY"]
+
 # Initialize ChatNVIDIA client
 @st.cache_resource
 def get_nvidia_client():
     return ChatNVIDIA(
         model="meta/llama-3.2-3b-instruct",
-        api_key= st.secrets["API_KEY"],
+        api_key= api_key,
         temperature=0.2,
         top_p=0.7,
         max_tokens=1024,
