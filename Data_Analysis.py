@@ -2,13 +2,14 @@ import streamlit as st
 import pandas as pd
 import re
 from openai import OpenAI
+import os
 
 # Initialize OpenAI client
 @st.cache_resource
 def get_openai_client():
     return OpenAI(
         base_url="https://integrate.api.nvidia.com/v1",
-        api_key = st.secrets["API_KEY"]
+        api_key=st.secrets["API_KEY"]
     )
 
 # Convert dataset to a formatted string
@@ -101,11 +102,11 @@ def main():
             try:
                 with st.spinner("Generating EDA code..."):
                     completion = client.chat.completions.create(
-                        model="meta/llama-3.2-3b-instruct",
+                        model="meta/llama-3.2-1b-instruct",
                         messages=[{"role": "user", "content": eda_prompt}],
-                        temperature=0.5,
-                        top_p=0.9,
-                        max_tokens=2048,
+                        temperature=0.2,
+                        top_p=0.7,
+                        max_tokens=1024,
                         stream=True
                     )
 
@@ -129,6 +130,28 @@ def main():
 
             except Exception as e:
                 st.error(f"Error generating EDA code: {e}")
+
+    # Feedback Section using Google Form
+    st.sidebar.subheader("We Value Your Feedback")
+    st.sidebar.markdown("""
+    <a href="https://forms.gle/rTrFC4rwqfJ9B6mE9" target="_blank">
+        <button style="
+            background-color: #4CAF50; 
+            color: white; 
+            padding: 10px 20px; 
+            text-align: center; 
+            text-decoration: none; 
+            display: inline-block; 
+            font-size: 14px; 
+            margin: 4px 2px; 
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+        ">
+            Open Feedback Form
+        </button>
+    </a>
+    """, unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
