@@ -1,14 +1,17 @@
 import streamlit as st
 import pandas as pd
 import re
-from openai import OpenAI
+from langchain_nvidia_ai_endpoints import ChatNVIDIA
 
-# Initialize OpenAI client
+# Initialize ChatNVIDIA client
 @st.cache_resource
-def get_openai_client():
-    return OpenAI(
-        base_url="https://integrate.api.nvidia.com/v1",
-        api_key=st.secrets["API_KEY"]
+def get_nvidia_client():
+    return ChatNVIDIA(
+        model="meta/llama-3.2-3b-instruct",
+        api_key="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",
+        temperature=0.2,
+        top_p=0.7,
+        max_tokens=1024,
     )
 
 # Convert dataset to a formatted string
@@ -81,9 +84,9 @@ def preprocess_generated_code(code):
 
 # Main Streamlit app function
 def main():
-    st.title("Advanced Exploratory Data Analysis with Llama")
+    st.title("Advanced Exploratory Data Analysis with NVIDIA AI")
 
-    client = get_openai_client()
+    client = get_nvidia_client()
 
     uploaded_file = st.file_uploader("Upload a CSV file for analysis", type="csv")
     if uploaded_file:
@@ -100,19 +103,10 @@ def main():
 
             try:
                 with st.spinner("Generating EDA code..."):
-                    completion = client.chat.completions.create(
-                        model="meta/llama-3.2-3b-instruct",
-                        messages=[{"role": "user", "content": eda_prompt}],
-                        temperature=0.5,
-                        top_p=0.9,
-                        max_tokens=2048,
-                        stream=True
-                    )
-
                     generated_code = ""
-                    for chunk in completion:
-                        if chunk.choices[0].delta.content:
-                            generated_code += chunk.choices[0].delta.content
+                    for chunk in client.stream([{"role": "user", "content": eda_prompt}]):
+                        if chunk.content:
+                            generated_code += chunk.content
 
                 # Process and display the generated code
                 processed_code = preprocess_generated_code(generated_code)
@@ -129,6 +123,28 @@ def main():
 
             except Exception as e:
                 st.error(f"Error generating EDA code: {e}")
+
+    # Feedback Section using Google Form
+    st.sidebar.subheader("We Value Your Feedback")
+    st.sidebar.markdown("""
+    <a href="https://forms.gle/rTrFC4rwqfJ9B6mE9" target="_blank">
+        <button style="
+            background-color: #4CAF50; 
+            color: white; 
+            padding: 10px 20px; 
+            text-align: center; 
+            text-decoration: none; 
+            display: inline-block; 
+            font-size: 14px; 
+            margin: 4px 2px; 
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+        ">
+            Open Feedback Form
+        </button>
+    </a>
+    """, unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
