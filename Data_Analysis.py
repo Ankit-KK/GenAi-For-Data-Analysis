@@ -8,7 +8,7 @@ from langchain_nvidia_ai_endpoints import ChatNVIDIA
 def get_nvidia_client():
     return ChatNVIDIA(
         model="meta/llama-3.2-3b-instruct",
-        api_key="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",
+        api_key="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",
         temperature=0.2,
         top_p=0.7,
         max_tokens=1024,
