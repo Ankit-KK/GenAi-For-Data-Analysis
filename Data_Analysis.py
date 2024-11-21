@@ -49,7 +49,38 @@ def create_eda_prompt(data_str):
       ```
 
     ### Tasks:
-    (rest of the prompt remains unchanged)
+
+    **1. Data Inspection:**
+       - Summarize dataset structure (e.g., shape, columns, data types).
+       - Identify missing values and outliers, suggesting appropriate strategies to handle them.
+
+    **2. Descriptive Statistics:**
+       - Compute key statistics (mean, median, mode, standard deviation, skewness, kurtosis).
+       - Highlight any noteworthy trends or anomalies.
+
+    **3. Visual Exploration:**
+       - Plot histograms, box plots, and density plots for numerical features.
+       - Use bar plots or count plots for categorical variables.
+       - Generate scatter plots, pair plots, and correlation heatmaps to explore relationships.
+
+    **4. Advanced Visualizations:**
+       - Use violin plots and swarm plots to visualize distributions.
+       - Apply clustering techniques (e.g., K-Means or DBSCAN) for grouping insights.
+       - Perform Principal Component Analysis (PCA) for dimensionality reduction and visualize in 2D/3D.
+
+    **5. Feature Relationships:**
+       - Analyze relationships between features and a target variable (if applicable).
+       - Use grouped bar charts, trendlines, or advanced statistical tests to uncover patterns.
+
+    **6. Recommendations and Next Steps:**
+       - Summarize insights, patterns, and anomalies observed in the data.
+       - Provide actionable recommendations, including ideas for feature engineering and preprocessing steps.
+
+    ### Output Requirements:
+    - Python code for each step with detailed comments.
+    - Use libraries such as pandas, numpy, matplotlib, seaborn, and scikit-learn.
+    - Provide clean and modular code that is ready for execution.
+    - Include explanations and visualizations in the output to ensure interpretability.
     """
 
 # Preprocess the generated code
@@ -179,7 +210,7 @@ def main():
                 st.error(f"Error generating EDA code: {e}")
 
     # Feedback Section
-    st.sidebar.subheader("We Value Your Feedback")
+    st.sidebar.subheader("We Value Your Feedback(In-Progress)")
     with st.sidebar.form(key="feedback_form"):
         email = st.text_input("Email (optional)")
         feedback = st.text_area("Your Feedback")
