@@ -130,5 +130,27 @@ def main():
             except Exception as e:
                 st.error(f"Error generating EDA code: {e}")
 
+    # Feedback Section using Google Form
+    st.sidebar.subheader("We Value Your Feedback")
+    st.sidebar.markdown("""
+    <a href="https://forms.gle/rTrFC4rwqfJ9B6mE9" target="_blank">
+        <button style="
+            background-color: #4CAF50; 
+            color: white; 
+            padding: 10px 20px; 
+            text-align: center; 
+            text-decoration: none; 
+            display: inline-block; 
+            font-size: 14px; 
+            margin: 4px 2px; 
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+        ">
+            Open Feedback Form
+        </button>
+    </a>
+    """, unsafe_allow_html=True)
+
 if __name__ == "__main__":
     main()
