@@ -1,196 +1,134 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
-from openai import OpenAI
-import traceback
-from io import StringIO
 import re
-import base64
-import os
+from openai import OpenAI
 
-# Initialize OpenAI client with a custom API key
+# Initialize OpenAI client
 @st.cache_resource
-def get_openai_client(api_key):
+def get_openai_client():
     return OpenAI(
         base_url="https://integrate.api.nvidia.com/v1",
-        api_key=api_key
+        api_key=st.secrets["API_KEY"]
     )
 
+# Convert dataset to a formatted string
 def dataset_to_string(df):
-    """Convert a dataset to a string format suitable for the model."""
-    data_sample = df.head().to_string()
-    data_info = df.describe(include='all').to_string()
+    try:
+        data_sample = df.head().to_string()
+        data_info = df.describe(include='all').to_string()
+    except Exception as e:
+        st.error(f"Error processing dataset: {e}")
+        return ""
     return f"Data Sample:\n{data_sample}\n\nData Description:\n{data_info}"
 
+# Generate an enhanced EDA prompt
 def create_eda_prompt(data_str):
-    """Create a custom EDA prompt for the language model."""
     return f"""
-    **Role**: You are an expert data analyst.
+    **Role**: You are an advanced data analyst and visualization expert.
 
-    **Context**: I have provided you with a dataset containing various features. Your task is to perform a comprehensive exploratory data analysis (EDA) to uncover insights, patterns, and potential issues in the data. The dataset includes a mix of numerical and categorical features, and it is crucial to explore these thoroughly to inform further analysis or decision-making.
+    I have provided you with a dataset for performing a detailed exploratory data analysis (EDA). Your task is to identify trends, relationships, and anomalies in the dataset using statistical and visualization techniques.
 
-    **Dataset Overview**:
-    - **Data Sample**:
+    ### Dataset Overview:
+    - **Data Sample:**
       ```
       {data_str.split('Data Description:')[0].strip()}
       ```
 
-    - **Data Description**:
+    - **Data Description:**
       ```
       {data_str.split('Data Description:')[1].strip()}
       ```
 
-    **Tasks**:
+    ### Tasks:
 
-    1. **Data Overview**:
-       - Print "Executing Task 1: Data Overview"
-       - Inspect the first few rows of the dataset to understand its structure.
-       - Determine the data types of each column (numerical, categorical, etc.).
-       - Check for missing values and describe the proportion of missing data in each column.
+    **1. Data Inspection:**
+       - Summarize dataset structure (e.g., shape, columns, data types).
+       - Identify missing values and outliers, suggesting appropriate strategies to handle them.
 
-    2. **Descriptive Statistics**:
-       - Print "Executing Task 2: Descriptive Statistics"
-       - Calculate summary statistics (mean, median, mode, standard deviation, variance, minimum, maximum) for each numerical column.
-       - Provide insights on the distribution of these numerical features (e.g., skewness, kurtosis).
+    **2. Descriptive Statistics:**
+       - Compute key statistics (mean, median, mode, standard deviation, skewness, kurtosis).
+       - Highlight any noteworthy trends or anomalies.
 
-    3. **Data Visualization**:
-       - Print "Executing Task 3: Data Visualization"
-       - Plot histograms and density plots for each numerical column to visualize distributions.
-       - Create scatter plots to examine relationships between key numerical variables (e.g., feature vs. target variable).
-       - Use box plots to identify outliers and understand the spread of the data.
+    **3. Visual Exploration:**
+       - Plot histograms, box plots, and density plots for numerical features.
+       - Use bar plots or count plots for categorical variables.
+       - Generate scatter plots, pair plots, and correlation heatmaps to explore relationships.
 
-    4. **Categorical Data Analysis**:
-       - Print "Executing Task 4: Categorical Data Analysis"
-       - Summarize the frequency of each category within categorical columns.
-       - Use bar plots or count plots to visualize the distribution of categorical variables.
-       - Analyze the relationship between categorical variables and the target variable (if applicable), using grouped bar charts or other appropriate visualizations.
+    **4. Advanced Visualizations:**
+       - Use violin plots and swarm plots to visualize distributions.
+       - Apply clustering techniques (e.g., K-Means or DBSCAN) for grouping insights.
+       - Perform Principal Component Analysis (PCA) for dimensionality reduction and visualize in 2D/3D.
 
-    5. **Correlation Analysis**:
-       - Print "Executing Task 5: Correlation Analysis"
-       - Compute the correlation matrix for numerical features.
-       - Visualize the correlation matrix using a heatmap and identify pairs of highly correlated features.
-       - Discuss potential implications of multicollinearity and suggest strategies for dealing with it.
+    **5. Feature Relationships:**
+       - Analyze relationships between features and a target variable (if applicable).
+       - Use grouped bar charts, trendlines, or advanced statistical tests to uncover patterns.
 
-    6. **Advanced Analysis**:
-       - Print "Executing Task 6: Advanced Analysis"
-        - **Handle Missing Values:**
-            - Check for missing values in the dataset.
-            - If missing values are present:
-                - Choose an appropriate strategy (e.g., imputation, dropping rows/columns) based on the type and extent of missingness.
-                - Explain the rationale behind the chosen strategy and its potential impact on the analysis.
-                - Implement the chosen strategy to handle missing values.
-        - Perform clustering (e.g., K-means) or dimensionality reduction (e.g., PCA) on the preprocessed data to uncover patterns or groupings in the data.
-       - Identify any anomalies or unusual patterns that might warrant further investigation.
+    **6. Recommendations and Next Steps:**
+       - Summarize insights, patterns, and anomalies observed in the data.
+       - Provide actionable recommendations, including ideas for feature engineering and preprocessing steps.
 
-    7. **Insights and Recommendations**:
-       - Print "Executing Task 7: Insights and Recommendations"
-       - Summarize the key findings from the EDA, highlighting significant patterns, trends, or anomalies.
-       - Provide actionable insights based on the analysis, such as data cleaning steps, feature engineering ideas, or further analyses that could be conducted.
-       - Suggest potential next steps, including any additional data that may be required or further analyses that could enhance understanding.
-
-    **Instructions for Model**:
-    - Provide Python code snippets for each task, ensuring that the code is efficient, well-commented, and easy to understand.
-    - Include print statements before each task to indicate which task is being executed.
-    - Execute the code snippets where necessary to validate the findings and ensure there are no errors.
-    - If any assumptions are made during the analysis, clearly state them and explain their rationale.
-
-    **Output**:
-    - The analysis should be comprehensive and thorough, providing clear and actionable insights based on the data.
-    - Include any visualizations as part of the output to support the findings and provide a clear understanding of the data.
+    ### Output Requirements:
+    - Python code for each step with detailed comments.
+    - Use libraries such as pandas, numpy, matplotlib, seaborn, and scikit-learn.
+    - Provide clean and modular code that is ready for execution.
+    - Include explanations and visualizations in the output to ensure interpretability.
     """
 
+# Preprocess the generated code
 def preprocess_generated_code(code):
-    # Remove any markdown code block indicators
     code = re.sub(r'```python|```', '', code)
-    
-    # Remove any explanatory text before the actual code
-    code = re.sub(r'^.*?import', 'import', code, flags=re.DOTALL)
-    
-    # Replace triple quotes with double quotes
-    code = code.replace("'''", '"""')
-    
-    # Ensure necessary imports are present
-    if "import matplotlib.pyplot as plt" not in code:
-        code = "import matplotlib.pyplot as plt\n" + code
-    if "import seaborn as sns" not in code:
-        code = "import seaborn as sns\n" + code
-    
     return code.strip()
 
-def get_binary_file_downloader_html(bin_file, file_label='File'):
-    with open(bin_file, 'rb') as f:
-        data = f.read()
-    bin_str = base64.b64encode(data).decode()
-    href = f'<a href="data:application/octet-stream;base64,{bin_str}" download="{os.path.basename(bin_file)}">Download {file_label}</a>'
-    return href
-
+# Main Streamlit app function
 def main():
-    st.title("ExploraGen")
+    st.title("Advanced Exploratory Data Analysis with Llama")
 
-    api_key = st.secrets["api_key"]
+    client = get_openai_client()
 
-    # Prompt the user to input their API key at the start of the app
-    #st.warning("The default API key credits are over. Please use your own NVIDIA API Key.")
-    #st.info("You can get an API key from here: [NVIDIA Meta LLaMA API Key](https://build.nvidia.com/meta/llama-3_1-405b-instruct)")
-    #api_key = st.text_input("Enter your NVIDIA API Key:", type="password")
-
-    #if not api_key:
-        #st.error("API Key is required to proceed.")
-        #return
-
-    uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
-    
-    if uploaded_file is not None:
+    uploaded_file = st.file_uploader("Upload a CSV file for analysis", type="csv")
+    if uploaded_file:
         df = pd.read_csv(uploaded_file)
         st.write("Dataset Preview:")
         st.dataframe(df.head())
 
         if st.button("Generate EDA Code"):
             data_str = dataset_to_string(df)
-            eda_prompt = create_eda_prompt(data_str)
+            if not data_str:
+                return
 
-            client = get_openai_client(api_key)
+            eda_prompt = create_eda_prompt(data_str)
 
             try:
                 with st.spinner("Generating EDA code..."):
                     completion = client.chat.completions.create(
-                        model="meta/llama-3.1-8b-instruct",
+                        model="meta/llama-3.2-3b-instruct",
                         messages=[{"role": "user", "content": eda_prompt}],
                         temperature=0.5,
-                        top_p=0.7,
+                        top_p=0.9,
                         max_tokens=2048,
                         stream=True
                     )
 
                     generated_code = ""
                     for chunk in completion:
-                        if chunk.choices[0].delta.content is not None:
+                        if chunk.choices[0].delta.content:
                             generated_code += chunk.choices[0].delta.content
 
-                # Preprocess the generated code
+                # Process and display the generated code
                 processed_code = preprocess_generated_code(generated_code)
-
-                st.subheader("Generated Code:")
+                st.subheader("Generated EDA Code:")
                 st.code(processed_code)
 
-                # Save to Python file
+                # Provide download option
                 file_path = "eda_generated.py"
                 with open(file_path, "w") as f:
                     f.write(processed_code)
-                st.success(f"Generated code saved to '{file_path}'")
 
-                # Add download button for the generated Python file
-                with open(file_path, 'r') as f:
-                    st.download_button('Download EDA Code', f, file_name=file_path, mime='text/plain')
-
-                # Warning message about potential code adjustments
-                st.warning("The generated code might contain minor errors or require slight adjustments.")
+                with open(file_path, "r") as f:
+                    st.download_button("Download Generated Code", f, file_name="eda_generated.py", mime="text/plain")
 
             except Exception as e:
-                st.error("The API Key is invalid or credits are over. Please use a valid API Key.")
-                st.info("You can get an API key from here: [NVIDIA Meta LLaMA API Key](https://build.nvidia.com/meta/llama-3_1-405b-instruct)")
+                st.error(f"Error generating EDA code: {e}")
 
 if __name__ == "__main__":
     main()
