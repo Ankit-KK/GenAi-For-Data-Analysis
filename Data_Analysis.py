@@ -9,13 +9,12 @@ api_key= st.secrets["API_KEY"]
 @st.cache_resource
 def get_nvidia_client():
     return ChatNVIDIA(
-        model="meta/llama-3.2-3b-instruct",
-        api_key= api_key,
-        temperature=0.2,
-        top_p=0.7,
-        max_tokens=1024,
-    )
-
+  model="meta/llama-3.2-1b-instruct",
+  api_key="$API_KEY_REQUIRED_IF_EXECUTING_OUTSIDE_NGC", 
+  temperature=0.2,
+  top_p=0.7,
+  max_tokens=1024,
+)
 # Convert dataset to a formatted string
 def dataset_to_string(df):
     try:
