@@ -10,6 +10,7 @@ api_key= st.secrets["API_KEY"]
 def get_nvidia_client():
     return ChatNVIDIA(
   model="meta/llama-3.1-405b-instruct",
+        api_key=api_key, 
   temperature=0.2,
   top_p=0.7,
   max_tokens=1024,
