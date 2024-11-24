@@ -9,7 +9,7 @@ api_key= st.secrets["API_KEY"]
 @st.cache_resource
 def get_nvidia_client():
     return ChatNVIDIA(
-  model="meta/llama-3.2-1b-instruct",
+  model="meta/llama-3.1-405b-instruct",
   api_key="$API_KEY_REQUIRED_IF_EXECUTING_OUTSIDE_NGC", 
   temperature=0.2,
   top_p=0.7,
