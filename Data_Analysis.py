@@ -81,7 +81,7 @@ def preprocess_generated_code(code):
 
 # Main Streamlit app function
 def main():
-    st.title("Advanced Exploratory Data Analysis with Llama")
+    st.title("ExploraGen: Advanced Exploratory Data Analysis with Llama")
 
     client = get_openai_client()
 
