@@ -83,6 +83,29 @@ def preprocess_generated_code(code):
 def main():
     st.title("ExploraGen: Advanced Exploratory Data Analysis with Llama")
 
+       # Feedback Section using Google Form
+    st.sidebar.subheader("I appreciate your feedback.")
+    st.sidebar.markdown("""
+    <a href="https://forms.gle/rTrFC4rwqfJ9B6mE9" target="_blank">
+        <button style="
+            background-color: #4CAF50; 
+            color: white; 
+            padding: 10px 20px; 
+            text-align: center; 
+            text-decoration: none; 
+            display: inline-block; 
+            font-size: 14px; 
+            margin: 4px 2px; 
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+        ">
+            Submit Feedback
+        </button>
+    </a>
+    """, unsafe_allow_html=True)
+
+
     client = get_openai_client()
 
     uploaded_file = st.file_uploader("Upload a CSV file for analysis", type="csv")
