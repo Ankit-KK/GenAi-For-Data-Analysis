@@ -81,7 +81,7 @@ def preprocess_generated_code(code):
 
 # Main Streamlit app function
 def main():
-    st.title("ExploraGen: Advanced Exploratory Data Analysis with Llama")
+    st.title("ExploraGen: Advanced Exploratory Data Analysis with Llama 3.2")
 
        # Feedback Section using Google Form
     st.sidebar.subheader("I appreciate your feedback.")
