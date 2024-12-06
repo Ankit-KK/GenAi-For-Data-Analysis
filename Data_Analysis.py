@@ -4,12 +4,23 @@ import re
 from langchain_nvidia_ai_endpoints import ChatNVIDIA
 import traceback
 
+# API Key Input Section
+st.title("NVIDIA AI API Key Setup")
+st.markdown("Get Your Free 1000 Credits here: [NVIDIA AI Free Credits](https://build.nvidia.com/meta/llama-3_1-405b-instruct?snippet_tab=LangChain)")
+
+api_key = st.text_input("Enter your NVIDIA AI API Key:", type="password")
+
+if api_key:
+    st.success("API Key successfully entered!")
+else:
+    st.info("Please enter your API key to proceed.")
+
 # Initialize NVIDIA AI client
 @st.cache_resource
 def get_nvidia_client():
     return ChatNVIDIA(
         model="meta/llama-3.1-405b-instruct",  # Updated NVIDIA model
-        api_key="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",
+        api_key= api_key,
         temperature=0.5,
         top_p=0.9,
         max_tokens=2048,
