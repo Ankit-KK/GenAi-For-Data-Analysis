@@ -9,7 +9,7 @@ import traceback
 def get_nvidia_client():
     return ChatNVIDIA(
         model="meta/llama-3.1-405b-instruct",  # Updated NVIDIA model
-        api_key=st.secrets.get("api_key"),
+        api_key="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",
         temperature=0.5,
         top_p=0.9,
         max_tokens=2048,
