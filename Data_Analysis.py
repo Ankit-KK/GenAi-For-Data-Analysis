@@ -1,21 +1,25 @@
 import streamlit as st
 import pandas as pd
 import re
-from openai import OpenAI
+from langchain_nvidia_ai_endpoints import ChatNVIDIA
+import traceback
 
-# Initialize OpenAI client
+# Initialize NVIDIA AI client
 @st.cache_resource
-def get_openai_client():
-    return OpenAI(
-        base_url="https://integrate.api.nvidia.com/v1",
-        api_key=st.secrets["api_key"]
+def get_nvidia_client():
+    return ChatNVIDIA(
+        model="meta/llama-3.1-405b-instruct",  # Updated NVIDIA model
+        api_key=st.secrets.get("api_key"),
+        temperature=0.5,
+        top_p=0.9,
+        max_tokens=2048,
     )
 
 # Convert dataset to a formatted string
 def dataset_to_string(df):
     try:
         data_sample = df.head().to_string()
-        data_info = df.describe(include='all').to_string()
+        data_info = df.describe(include="all").to_string()
     except Exception as e:
         st.error(f"Error processing dataset: {e}")
         return ""
@@ -76,14 +80,14 @@ def create_eda_prompt(data_str):
 
 # Preprocess the generated code
 def preprocess_generated_code(code):
-    code = re.sub(r'```python|```', '', code)
+    code = re.sub(r"```python|```", "", code)
     return code.strip()
 
 # Main Streamlit app function
 def main():
-    st.title("ExploraGen: Advanced Exploratory Data Analysis with Llama 3.2")
+    st.title("ExploraGen: Advanced Exploratory Data Analysis with NVIDIA AI")
 
-       # Feedback Section using Google Form
+    # Feedback Section using Google Form
     st.sidebar.subheader("I appreciate your feedback.")
     st.sidebar.markdown("""
     <a href="https://forms.gle/rTrFC4rwqfJ9B6mE9" target="_blank">
@@ -105,8 +109,7 @@ def main():
     </a>
     """, unsafe_allow_html=True)
 
-
-    client = get_openai_client()
+    client = get_nvidia_client()
 
     uploaded_file = st.file_uploader("Upload a CSV file for analysis", type="csv")
     if uploaded_file:
@@ -123,19 +126,9 @@ def main():
 
             try:
                 with st.spinner("Generating EDA code..."):
-                    completion = client.chat.completions.create(
-                        model="meta/llama-3.2-3b-instruct",
-                        messages=[{"role": "user", "content": eda_prompt}],
-                        temperature=0.5,
-                        top_p=0.9,
-                        max_tokens=2048,
-                        stream=True
-                    )
-
                     generated_code = ""
-                    for chunk in completion:
-                        if chunk.choices[0].delta.content:
-                            generated_code += chunk.choices[0].delta.content
+                    for chunk in client.stream([{"role": "user", "content": eda_prompt}]):
+                        generated_code += chunk.content
 
                 # Process and display the generated code
                 processed_code = preprocess_generated_code(generated_code)
@@ -152,6 +145,7 @@ def main():
 
             except Exception as e:
                 st.error(f"Error generating EDA code: {e}")
+                st.error(traceback.format_exc())
 
 if __name__ == "__main__":
     main()
