@@ -2,35 +2,22 @@ import streamlit as st
 import pandas as pd
 import re
 from langchain_nvidia_ai_endpoints import ChatNVIDIA
-import traceback
-
-
 
 # Initialize NVIDIA AI client
-@st.cache_resource
-def get_nvidia_client():
-
-    st.markdown("Get Your Free 1000 Credits here: [NVIDIA AI Free Credits](https://build.nvidia.com/meta/llama-3_1-405b-instruct?snippet_tab=LangChain)")
-    
-    api_key = st.text_input("Enter your NVIDIA AI API Key:", type="password")
-    
-    if api_key:
-        st.success("API Key successfully entered!")
-    else:
-        st.info("Please enter your API key to proceed.")
+def get_nvidia_client(api_key):
     return ChatNVIDIA(
-        model="meta/llama-3.1-405b-instruct",  # Updated NVIDIA model
-        api_key= api_key,
-        temperature=0.5,
-        top_p=0.9,
-        max_tokens=2048,
+        model="meta/llama-3.1-405b-instruct",
+        api_key=api_key,
+        temperature=0.2,
+        top_p=0.7,
+        max_tokens=1024,
     )
 
 # Convert dataset to a formatted string
 def dataset_to_string(df):
     try:
         data_sample = df.head().to_string()
-        data_info = df.describe(include="all").to_string()
+        data_info = df.describe(include='all').to_string()
     except Exception as e:
         st.error(f"Error processing dataset: {e}")
         return ""
@@ -38,93 +25,96 @@ def dataset_to_string(df):
 
 # Generate an enhanced EDA prompt
 def create_eda_prompt(data_str):
-    return """
-
-**Your Role:**
+    return f"""
+    Your Role:
 
 You are a seasoned data scientist, adept at extracting valuable insights from complex datasets. Your task is to conduct a comprehensive exploratory data analysis (EDA) on a dataset provided below. Through statistical analysis and compelling visualizations, you will uncover hidden patterns, identify anomalies, and derive actionable insights.
 
-**Dataset Overview:**
+Dataset Overview:
 
-* **Data Sample:** 
-  ```
-  {data_str.split('Data Description:')[0].strip()}
-  ```
+Data Sample:
 
-* **Data Description:**
-  ```
-  {data_str.split('Data Description:')[1].strip()}
-  ```
+{data_str.split('Data Description:')[0].strip()}
+Data Description:
 
-**Your Mission:**
+{data_str.split('Data Description:')[1].strip()}
+Your Mission:
 
-1. **Data Deep Dive:**
-   * **Unmask the Data:** Delve into the dataset's structure, shape, and data types.
-   * **Missing Pieces and Outliers:** Identify and handle missing values and outliers, justifying your approach.
+Data Deep Dive:
 
-2. **Statistical Portrait:**
-   * **Key Metrics:** Calculate essential statistics (mean, median, mode, standard deviation, skewness, kurtosis) to understand data distribution.
-   * **Spotting the Unusual:** Highlight any intriguing trends or anomalies that warrant further investigation.
+Unmask the Data: Delve into the dataset's structure, shape, and data types.
+Missing Pieces and Outliers: Identify and handle missing values and outliers, justifying your approach.
+Statistical Portrait:
 
-3. **Visual Storytelling:**
-   * **Data Visualization:** Employ histograms, box plots, and density plots to visualize numerical variables.
-   * **Categorical Insights:** Utilize bar plots or count plots to explore categorical data.
-   * **Relationship Revelations:** Generate scatter plots, pair plots, and correlation heatmaps to uncover relationships between variables.
+Key Metrics: Calculate essential statistics (mean, median, mode, standard deviation, skewness, kurtosis) to understand data distribution.
+Spotting the Unusual: Highlight any intriguing trends or anomalies that warrant further investigation.
+Visual Storytelling:
 
-4. **Advanced Visual Exploration:**
-   * **Deeper Insights:** Employ violin plots and swarm plots to visualize distributions in greater detail.
-   * **Clustering for Clarity:** Apply clustering techniques (K-Means, DBSCAN) to group similar data points and identify underlying patterns.
-   * **Dimensionality Reduction:** Utilize Principal Component Analysis (PCA) to reduce dimensionality and visualize data in 2D or 3D space.
+Data Visualization: Employ histograms, box plots, and density plots to visualize numerical variables.
+Categorical Insights: Utilize bar plots or count plots to explore categorical data.
+Relationship Revelations: Generate scatter plots, pair plots, and correlation heatmaps to uncover relationships between variables.
+Advanced Visual Exploration:
 
-5. **Feature Relationships and Target Variable:**
-   * **Feature Impact:** Analyze the relationship between features and a target variable (if applicable).
-   * **Visualizing Trends:** Employ grouped bar charts, trendlines, or advanced statistical tests to uncover hidden patterns.
+Deeper Insights: Employ violin plots and swarm plots to visualize distributions in greater detail.
+Clustering for Clarity: Apply clustering techniques (K-Means, DBSCAN) to group similar data points and identify underlying patterns.
+Dimensionality Reduction: Utilize Principal Component Analysis (PCA) to reduce dimensionality and visualize data in 2D or 3D space.
+Feature Relationships and Target Variable:
 
-6. **Actionable Insights and Future Directions:**
-   * **Summarize Key Findings:** Concisely present the major insights, patterns, and anomalies discovered during the EDA.
-   * **Data-Driven Recommendations:** Provide actionable recommendations, including potential feature engineering techniques and preprocessing steps to enhance future modeling efforts.
+Feature Impact: Analyze the relationship between features and a target variable (if applicable).
+Visualizing Trends: Employ grouped bar charts, trendlines, or advanced statistical tests to uncover hidden patterns.
+Actionable Insights and Future Directions:
 
-**Deliverables:**
+Summarize Key Findings: Concisely present the major insights, patterns, and anomalies discovered during the EDA.
+Data-Driven Recommendations: Provide actionable recommendations, including potential feature engineering techniques and preprocessing steps to enhance future modeling efforts.
+Deliverables:
 
-* **Python Code:** Present clean, well-commented Python code using libraries like pandas, NumPy, Matplotlib, Seaborn, and scikit-learn.
-* **Clear and Concise Explanations:** Accompany your code with clear explanations and visualizations to ensure easy interpretation of results. 
-* **Reproducible Workflow:** Ensure your code is modular and ready for execution, facilitating reproducibility and collaboration.
-
-"""
-
+Python Code: Present clean, well-commented Python code using libraries like pandas, NumPy, Matplotlib, Seaborn, and scikit-learn.
+Clear and Concise Explanations: Accompany your code with clear explanations and visualizations to ensure easy interpretation of results.
+Reproducible Workflow: Ensure your code is modular and ready for execution, facilitating reproducibility and collaboration.
+By successfully completing this EDA, you will not only demonstrate your data analysis prowess but also contribute to a deeper understanding of the dataset and its potential implications.
+    """
 
 # Preprocess the generated code
 def preprocess_generated_code(code):
-    code = re.sub(r"```python|```", "", code)
+    code = re.sub(r'```python|```', '', code)
     return code.strip()
 
 # Main Streamlit app function
 def main():
-    st.title("ExploraGen: Advanced Exploratory Data Analysis with NVIDIA AI")
+    st.title("ExploraGen: Advanced Exploratory Data Analysis with Llama 3.2")
 
-    # Feedback Section using Google Form
     st.sidebar.subheader("I appreciate your feedback.")
-    st.sidebar.markdown("""
-    <a href="https://forms.gle/rTrFC4rwqfJ9B6mE9" target="_blank">
-        <button style="
-            background-color: #4CAF50; 
-            color: white; 
-            padding: 10px 20px; 
-            text-align: center; 
-            text-decoration: none; 
-            display: inline-block; 
-            font-size: 14px; 
-            margin: 4px 2px; 
-            cursor: pointer;
-            border: none;
-            border-radius: 8px;
-        ">
-            Submit Feedback
-        </button>
-    </a>
-    """, unsafe_allow_html=True)
+    st.sidebar.markdown(
+        """
+        <a href="https://forms.gle/rTrFC4rwqfJ9B6mE9" target="_blank">
+            <button style="
+                background-color: #4CAF50; 
+                color: white; 
+                padding: 10px 20px; 
+                text-align: center; 
+                text-decoration: none; 
+                display: inline-block; 
+                font-size: 14px; 
+                margin: 4px 2px; 
+                cursor: pointer;
+                border: none;
+                border-radius: 8px;
+            ">
+                Submit Feedback
+            </button>
+        </a>
+        """,
+        unsafe_allow_html=True,
+    )
 
-    client = get_nvidia_client()
+    st.markdown("Get Your Free 1000 Credits here: [NVIDIA AI Free Credits](https://build.nvidia.com/meta/llama-3_1-405b-instruct?snippet_tab=LangChain)")
+    api_key = st.text_input("Enter your NVIDIA AI API Key:", type="password")
+
+    if not api_key:
+        st.warning("Please enter your API key to proceed.")
+        return
+
+    client = get_nvidia_client(api_key)
 
     uploaded_file = st.file_uploader("Upload a CSV file for analysis", type="csv")
     if uploaded_file:
@@ -160,7 +150,6 @@ def main():
 
             except Exception as e:
                 st.error(f"Error generating EDA code: {e}")
-                st.error(traceback.format_exc())
 
 if __name__ == "__main__":
     main()
