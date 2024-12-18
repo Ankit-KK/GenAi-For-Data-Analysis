@@ -26,53 +26,54 @@ def dataset_to_string(df):
 # Generate an enhanced EDA prompt
 def create_eda_prompt(data_str):
     return f"""
-    Your Role:
+    **Role**: You are an advanced data analyst and visualization expert.
 
-You are a seasoned data scientist, adept at extracting valuable insights from complex datasets. Your task is to conduct a comprehensive exploratory data analysis (EDA) on a dataset provided below. Through statistical analysis and compelling visualizations, you will uncover hidden patterns, identify anomalies, and derive actionable insights.
+    I have provided you with a dataset for performing a detailed exploratory data analysis (EDA). Your task is to identify trends, relationships, and anomalies in the dataset using statistical and visualization techniques.
 
-Dataset Overview:
+    ### Dataset Overview:
+    - **Data Sample:**
+      ```
+      {data_str.split('Data Description:')[0].strip()}
+      ```
 
-Data Sample:
+    - **Data Description:**
+      ```
+      {data_str.split('Data Description:')[1].strip()}
+      ```
 
-{data_str.split('Data Description:')[0].strip()}
-Data Description:
+    ### Tasks:
 
-{data_str.split('Data Description:')[1].strip()}
-Your Mission:
+    **1. Data Inspection:**
+       - Summarize dataset structure (e.g., shape, columns, data types).
+       - Identify missing values and outliers, suggesting appropriate strategies to handle them.
 
-Data Deep Dive:
+    **2. Descriptive Statistics:**
+       - Compute key statistics (mean, median, mode, standard deviation, skewness, kurtosis).
+       - Highlight any noteworthy trends or anomalies.
 
-Unmask the Data: Delve into the dataset's structure, shape, and data types.
-Missing Pieces and Outliers: Identify and handle missing values and outliers, justifying your approach.
-Statistical Portrait:
+    **3. Visual Exploration:**
+       - Plot histograms, box plots, and density plots for numerical features.
+       - Use bar plots or count plots for categorical variables.
+       - Generate scatter plots, pair plots, and correlation heatmaps to explore relationships.
 
-Key Metrics: Calculate essential statistics (mean, median, mode, standard deviation, skewness, kurtosis) to understand data distribution.
-Spotting the Unusual: Highlight any intriguing trends or anomalies that warrant further investigation.
-Visual Storytelling:
+    **4. Advanced Visualizations:**
+       - Use violin plots and swarm plots to visualize distributions.
+       - Apply clustering techniques (e.g., K-Means or DBSCAN) for grouping insights.
+       - Perform Principal Component Analysis (PCA) for dimensionality reduction and visualize in 2D/3D.
 
-Data Visualization: Employ histograms, box plots, and density plots to visualize numerical variables.
-Categorical Insights: Utilize bar plots or count plots to explore categorical data.
-Relationship Revelations: Generate scatter plots, pair plots, and correlation heatmaps to uncover relationships between variables.
-Advanced Visual Exploration:
+    **5. Feature Relationships:**
+       - Analyze relationships between features and a target variable (if applicable).
+       - Use grouped bar charts, trendlines, or advanced statistical tests to uncover patterns.
 
-Deeper Insights: Employ violin plots and swarm plots to visualize distributions in greater detail.
-Clustering for Clarity: Apply clustering techniques (K-Means, DBSCAN) to group similar data points and identify underlying patterns.
-Dimensionality Reduction: Utilize Principal Component Analysis (PCA) to reduce dimensionality and visualize data in 2D or 3D space.
-Feature Relationships and Target Variable:
+    **6. Recommendations and Next Steps:**
+       - Summarize insights, patterns, and anomalies observed in the data.
+       - Provide actionable recommendations, including ideas for feature engineering and preprocessing steps.
 
-Feature Impact: Analyze the relationship between features and a target variable (if applicable).
-Visualizing Trends: Employ grouped bar charts, trendlines, or advanced statistical tests to uncover hidden patterns.
-Actionable Insights and Future Directions:
-
-Summarize Key Findings: Concisely present the major insights, patterns, and anomalies discovered during the EDA.
-Data-Driven Recommendations: Provide actionable recommendations, including potential feature engineering techniques and preprocessing steps to enhance future modeling efforts.
-Deliverables:
-
-Python Code: Present clean, well-commented Python code using libraries like pandas, NumPy, Matplotlib, Seaborn, and scikit-learn.
-Clear and Concise Explanations: Accompany your code with clear explanations and visualizations to ensure easy interpretation of results.
-Reproducible Workflow: Ensure your code is modular and ready for execution, facilitating reproducibility and collaboration.
-By successfully completing this EDA, you will not only demonstrate your data analysis prowess but also contribute to a deeper understanding of the dataset and its potential implications.
-    """
+    ### Output Requirements:
+    - Python code for each step with detailed comments.
+    - Use libraries such as pandas, numpy, matplotlib, seaborn, and scikit-learn.
+    - Provide clean and modular code that is ready for execution.
+    - Include explanations and visualizations in the output to ensure interpretability."""
 
 # Preprocess the generated code
 def preprocess_generated_code(code):
